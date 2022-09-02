@@ -43,6 +43,7 @@
               <b-input 
                 type="textarea" 
                 v-model="debouncedText"
+                @input="updateSearchStatus()"
                 placeholder="Insert here a slice of your assessment text">
               </b-input>
             </b-field>   
@@ -73,6 +74,7 @@
               placeholder="Filter by specific challenges"
               @remove="loadDropdownChallenges(false)"
               @typing="loadDropdownChallenges"
+              @input="updateChallengeFilters()"
               type="is-primary is-light"
               close-type="is-primary is-light"
               attached>
@@ -97,11 +99,12 @@
               placeholder="Filter by specific proposals"
               @remove="loadDropdownProposals(false)"
               @typing="loadDropdownProposals"
+              @input="updateSearchStatus()"
               type="is-primary is-light"
               close-type="is-primary is-light"
               attached>
               <template v-slot="props">
-                  {{props.option.title}}
+                  {{props.option.fundId.toUpperCase()}}: {{props.option.title}}
               </template>
               <template #empty>
                   There are no items
@@ -110,8 +113,8 @@
           </b-field>
           <!-- Number of Proposals Assessed Selection -->
           <b-field label="Select from an interval of assessed Proposals" class="column is-4">
-            <b-numberinput type="is-primary is-light" size="is-small" controls-alignment="left" controls-position="compact" min="0"></b-numberinput>
-            <b-numberinput type="is-primary is-light" size="is-small" controls-alignment="right" controls-position="compact" min="0"></b-numberinput>
+            <b-numberinput @input="updateSearchStatus()" type="is-primary is-light" size="is-small" controls-alignment="left" controls-position="compact" min="0"></b-numberinput>
+            <b-numberinput @input="updateSearchStatus()" type="is-primary is-light" size="is-small" controls-alignment="right" controls-position="compact" min="0"></b-numberinput>
           </b-field>
 
           <b-button 
@@ -130,7 +133,7 @@
             type="is-primary is-large"
             :disabled="!canSearch"
             @click="searchId">
-            Search ID
+            Search ID &nbsp; <b-icon v-if="searchStatus" icon="update" size="is-small"></b-icon>
           </b-button>
         </b-tooltip>
       </div>
@@ -168,36 +171,42 @@ export default {
       fund: 'f9',
       funds: { 
         'f9': {
+          fundId: 'f9',
           title: "Fund 9",
           assessments: [],
           challenges: [],
           proposals: []
         },
         'f8': {
+          fundId: 'f8',
           title: "Fund 8",
           assessments: [],
           challenges: [],
           proposals: []
         },
         'f7': {
+          fundId: 'f7',
           title: "Fund 7",
           assessments: [],
           challenges: [],
           proposals: []
         },
         'f6': {
+          fundId: 'f6',
           title: "Fund 6",
           assessments: [],
           challenges: [],
           proposals: []
         },
         'f5': {
+          fundId: 'f5',
           title: "Fund 5",
           assessments: [],
           challenges: [],
           proposals: []
         },
         'f4': {
+          fundId: 'f4',
           title: "Fund 4",
           assessments: [],
           challenges: [],
@@ -205,6 +214,7 @@ export default {
         }
       },
       hasSearch: false,
+      searchStatus: false,
       minSlice: 20,
       assessmentSlice: '',
       advancedFilters: false,
@@ -237,7 +247,7 @@ export default {
         this.setValue('assessmentText', val)
       }, 500)
     },
-    challengesFromFunds(){
+    filteredChallenges(){
       if(this.selectedFunds.length > 0){
         let selection = [];
         this.selectedFunds.forEach( (f) => {
@@ -247,11 +257,17 @@ export default {
       }
       return []
     },
-    proposalsFromFunds(){
+    filteredProposals(){
       if(this.selectedFunds.length > 0){
         let selection = [];
         this.selectedFunds.forEach( (f) => {
-          selection = selection.concat( f.proposals )
+          if( this.selectedChallenges.map(ch=>ch.fundId).includes(f.fundId) ) {
+            let chRef = this.selectedChallenges.filter(ch => ch.fundId===f.fundId).map( (ch) => ch.id)
+            selection = selection.concat( f.proposals.filter( (p) => chRef.includes(p.challengeId) ) )
+          }
+          else {
+            selection = selection.concat( f.proposals )
+          }
         })
         return selection
       }
@@ -265,11 +281,20 @@ export default {
     },
     searchId() {
       console.log('searchId')
+      this.updateSearch = false;
       // this.hasSearch = true;
     },
     updateFundFilters(){
       this.loadDropdownChallenges()    // populate Challenges filter
       this.loadDropdownProposals()     // populate Proposals filter
+      this.updateSearchStatus()
+    },
+    updateChallengeFilters(){
+      this.loadDropdownProposals()     // populate Proposals filter
+      this.updateSearchStatus()
+    },
+    updateSearchStatus() {
+      (this.hasSearch) ? this.searchStatus=true : this.searchStatus=false
     },
     loadDropdownFunds(text) {
       let dropdown;
@@ -290,7 +315,7 @@ export default {
     },
     loadDropdownChallenges(text) {
       let dropdown;
-      let selection = this.challengesFromFunds;
+      let selection = this.filteredChallenges;
       if (text) {
         dropdown = selection.filter((option) => {
           return option.title
@@ -307,7 +332,7 @@ export default {
     },
     loadDropdownProposals(text) {
       let dropdown;
-      let selection = this.proposalsFromFunds;
+      let selection = this.filteredProposals;
       if (text) {
         dropdown = selection.filter((option) => {
           return option.title
@@ -331,29 +356,32 @@ export default {
       CatalystAPI.assessments('f9').then((r) => { // change to <f>
         // compute properties
         let assessments = r.data
-        let assessmentsCh = assessments.map( (ass) => (
+        let challenges = assessments.map( (ass) => (
             {
               id: ass.challengeId , 
-              title: ass.challengeTitle
+              title: ass.challengeTitle,
+              fundId: f
             }
           ))
-        let assessmentsProp = assessments.map( (ass) => (
+        let proposals = assessments.map( (ass) => (
             {
               id: ass.proposalId , 
               title: ass.proposalTitle,
-              url: ass.proposalUrl
+              url: ass.proposalUrl,
+              challengeId: ass.challengeId,
+              fundId: f
             }
           ))
         // populate this.funds properties
         this.funds[f].assessments = assessments
-        this.funds[f].challenges = assessmentsCh.filter((value, index, self) =>
+        this.funds[f].challenges = challenges.filter((value, index, self) =>
           index === self.findIndex((t) => (
             t.id === value.id && t.title === value.title
           ))
         )
-        this.funds[f].proposals = assessmentsProp.filter((value, index, self) =>
+        this.funds[f].proposals = proposals.filter((value, index, self) =>
           index === self.findIndex((t) => (
-            t.id === value.id && t.title === value.title && t.url === value.url
+            t.id === value.id && t.title === value.title && t.url === value.url && t.challengeId === value.challengeId
           ))
         )
       })
