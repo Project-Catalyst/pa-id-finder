@@ -147,19 +147,19 @@
     </section>
 
     <section class="box list-problems" v-if="hasSearch">
-      <div class="title">Searched PA-IDs</div>
-      <div class="subtitle" v-if="filteredIds.length === 0">
+      <!-- <div class="title">Searched PA-IDs</div> -->
+      <div class="subtitle" v-if="filteredAssessments.length === 0">
         There is no PA-ID identified for this search configuration.
       </div>
       <div class="list content">
-        <!-- <assessor-preview
-          :key="sensed.id"
-          v-for="sensed in sensedProblems"
-          :sensed="sensed"
-        /> -->
-        <p :key="ass.idAssessment" v-for="ass in filteredIds">
-          Assessor: {{ass.idAssessor}}
-        </p>
+        <assessor-preview
+          :key="id"
+          v-for="id in filteredIds"
+          :assessorId="id"
+          :funds="selectedFunds"
+          :challenges="selectedChallenges"
+          :proposals="selectedProposals"
+        />
       </div>
     </section>
   </div>
@@ -223,7 +223,7 @@ export default {
           proposals: []
         }
       },
-      filteredIds: [],
+      filteredAssessments: [],
       hasSearch: false,
       searchStatus: false,
       minSlice: 20,
@@ -271,6 +271,9 @@ export default {
         this.setValue('assessmentText', val)
       }, 500)
     },
+    filteredIds() {
+      return [...new Set(this.filteredAssessments.map( (ass) => ass.idAssessor ))];
+    },
     filteredChallenges(){
       if(this.selectedFunds.length > 0){
         let selection = [];
@@ -304,34 +307,28 @@ export default {
       console.log(this.selectedFunds)
     },
     filterIds() {
-      console.log('searchId')
 
       let filteredAssessments = this.selectedFunds.map( (fund) => fund.assessments ).flat()
-      console.log('filteredAssessments', filteredAssessments)
       
       if(this.selectedChallenges.length > 0) { 
         filteredAssessments = this.filterAssessmentsByChallenge(filteredAssessments)
-        console.log('selectedChallenges', filteredAssessments)
       }
 
       if(this.selectedProposals.length > 0) {
         filteredAssessments = this.filterAssessmentsByProposal(filteredAssessments)
-        console.log('selectedProposals', filteredAssessments)
       }
 
       if(this.hasNumberRange) {
         filteredAssessments = this.filterAssessmentsByRange(filteredAssessments)
-        console.log('hasNumberRange', filteredAssessments)
       }
 
       if(this.hasTextSlice) {
         filteredAssessments = this.filterAssessmentsByText(filteredAssessments, this.assessmentSlice)
-        console.log('hasTextSlice', filteredAssessments)
       }    
 
       this.searchStatus = false;
       this.hasSearch = true;
-      this.filteredIds = filteredAssessments;
+      this.filteredAssessments = filteredAssessments;
     },
     filterAssessmentsByText(assessments, text) {
       return assessments.filter( (ass) => {
@@ -360,7 +357,6 @@ export default {
         let occurrences = assIds.reduce(function (acc, curr) {
           return acc[curr] ? ++acc[curr] : acc[curr] = 1, acc
         }, {}); 
-        console.log(occurrences)
         filteredAssessments = filteredAssessments.concat( assessments.filter( (ass) => occurrences[ass.idAssessor] >= this.selectedAssessmentMin && occurrences[ass.idAssessor] <= this.selectedAssessmentMax ) )
       })
       return filteredAssessments
