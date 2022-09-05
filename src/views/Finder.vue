@@ -124,11 +124,11 @@
             </b-field>
           </div>
 
-          <b-button 
+          <!-- <b-button 
             type="is-primary is-small"
             @click="logFunds">
             Log funds
-          </b-button>
+          </b-button> -->
 
         </b-collapse>
       </div>
@@ -159,6 +159,7 @@
           :funds="selectedFunds"
           :challenges="selectedChallenges"
           :proposals="selectedProposals"
+          :assessments="assessmentsFromAssessor(id)"
         />
       </div>
     </section>
@@ -305,6 +306,9 @@ export default {
     logFunds(){
       console.log(this.funds)
       console.log(this.selectedFunds)
+    },
+    assessmentsFromAssessor(id) {
+      return this.filteredAssessments.filter( (ass) => ass.idAssessor===id )
     },
     filterIds() {
 
