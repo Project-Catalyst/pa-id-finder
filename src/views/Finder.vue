@@ -476,6 +476,7 @@ export default {
         )
       })
     })
+    this.funds = {...this.funds}
     console.log(this.funds)
     this.loadDropdownFunds()         // populate Funds filter
     this.loadDropdownChallenges()    // populate Challenges filter

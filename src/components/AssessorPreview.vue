@@ -12,45 +12,42 @@
           </div>
         </div>
         <h4> {{assessments.length}} assessed proposals identified for this search:</h4>
-        <div :key="fund.id" v-for="fund in funds">
-          <b-table
-            :data="tableData"
-            ref="table"
-            detailed
-            hoverable
-            custom-detail-row
-            detail-key="proposal"
-            @details-open="(row, index) => $buefy.toast.open(`Expanded ${row.proposal}`)"
-            :show-detail-icon="true">
+        <b-table
+          :data="tableData"
+          ref="table"
+          detailed
+          hoverable
+          custom-detail-row
+          detail-key="proposal"
+          @details-open="(row, index) => $buefy.toast.open(`Expanded ${row.proposal}`)"
+          :show-detail-icon="true">
 
-            <b-table-column field="proposal" label="Title" v-slot="props">
-              <b>{{ props.row.proposal }}</b>
-            </b-table-column>
+          <b-table-column field="proposal" label="Title" v-slot="props">
+            <b>{{ props.row.proposal }}</b>
+          </b-table-column>
 
-            <b-table-column field="count" label="#" numeric centered v-slot="props">
-              <b>{{ props.row.count }}</b>
-            </b-table-column>
+          <b-table-column field="count" label="#" numeric centered v-slot="props">
+            <b>{{ props.row.count }}</b>
+          </b-table-column>
 
-            <b-table-column field="challenge" label="Challenge Setting" centered v-slot="props">
-              <b>{{ props.row.challenge }}</b>
-            </b-table-column>
+          <b-table-column field="challenge" label="Challenge Setting" centered v-slot="props">
+            <b>{{ props.row.challenge }}</b>
+          </b-table-column>
 
-            <b-table-column field="assessment" label="See assessment" centered v-slot="props">
-              <b>{{ props.row.assessment }}</b>
-            </b-table-column>
+          <b-table-column field="assessment" label="See assessment" centered v-slot="props">
+            <b>{{ props.row.assessment }}</b>
+          </b-table-column>
 
-            <template slot="detail" slot-scope="props">
-              <tr v-for="item in props.row.items" :key="item.id">
-                <td></td>
-                <td><a @click="goToProposal(item)">{{ item.proposal }}</a></td>
-                <td class="has-text-centered">{{ item.count }}</td>
-                <td class="has-text-centered">{{ item.challenge }}</td>
-                <td class="has-text-centered">{{item.assessment}}</td>
-              </tr>
-            </template>
-          </b-table>
-
-        </div>
+          <template slot="detail" slot-scope="props">
+            <tr v-for="item in props.row.items" :key="item.id">
+              <td></td>
+              <td><a @click="goToProposal(item)">{{ item.proposal }}</a></td>
+              <td class="has-text-centered">{{ item.count }}</td>
+              <td class="has-text-centered">{{ item.challenge }}</td>
+              <td class="has-text-centered">{{item.assessment}}</td>
+            </tr>
+          </template>
+        </b-table>
 
       </div>
     </div>
