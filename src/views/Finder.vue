@@ -476,6 +476,7 @@ export default {
         )
       })
     })
+    console.log(this.funds)
     this.loadDropdownFunds()         // populate Funds filter
     this.loadDropdownChallenges()    // populate Challenges filter
     this.loadDropdownProposals()     // populate Proposals filter

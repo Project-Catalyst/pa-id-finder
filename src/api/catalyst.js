@@ -22,7 +22,7 @@ const getLocalizedPath = (fund) => {
 export default {
   assessments(fund){
     const localizedPath = getLocalizedPath(fund)
-    return axios.get(`${process.env.BASE_URL}data/${localizedPath}/assessments.json`)
+    return axios.get(`${process.env.BASE_URL}/data/${localizedPath}/assessments.json`)
   },
   // proposals(fund, challenge){
   //   const localizedPath = getLocalizedPath(fund)
