@@ -11,7 +11,7 @@
             <h2 class="title">{{assessor.id}}</h2>
           </div>
         </div>
-        <h4> {{assessor.assessments.length}} <em>assessments</em> identified for this search:</h4>
+        <h4> {{assessments.length}} <em>assessments</em> identified for this search:</h4>
         <b-table
           :data="tableData"
           ref="table"
@@ -63,7 +63,7 @@
 
 export default {
   name: 'AssessorPreview',
-  props: ['assessor', 'funds'],
+  props: ['funds', 'assessor', 'assessments'],
   data() {
     return {
     }
@@ -101,7 +101,7 @@ export default {
           }
       */
       const data = {...templateData};
-      let fundAssessments = this.assessor.assessments.filter( (ass) => ass.fundId === fId );
+      let fundAssessments = this.assessments.filter( (ass) => ass.fundId === fId );
       // id
       data.id = '';
       // proposal
@@ -129,7 +129,7 @@ export default {
           }
       */
       const data = {...templateData};
-      data.id = assessment.id;
+      data.id = assessment.idAssessment;
       data.proposal = assessment.proposalTitle;
       data.count = '';
       data.challenge = assessment.challengeTitle.split(": ").pop();

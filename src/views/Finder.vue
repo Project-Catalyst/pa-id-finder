@@ -152,13 +152,14 @@
         There is no PA-ID identified for this search configuration.
       </div>
       <div v-else>
-        <p><small>There are {{filteredAssessors.lenght}} assessors identified for this search</small></p>
+        <!-- <p><small>There are #{{searchCount}} assessors identified for this search</small></p> -->
         <div class="list content">
           <assessor-preview
             :key="assessor.id"
             v-for="assessor in filteredAssessors"
-            :assessor="assessor"
             :funds="funds"
+            :assessor="assessor"
+            :assessments="getAssessments(assessor)"            
           />
         </div>
       </div>
@@ -241,6 +242,9 @@ export default {
     }
   },
   computed: {
+    searchCount() {
+      return this.filteredAssessors.lenght
+    },
     hasFund() {
       return this.selectedFunds.length > 0
     },
@@ -304,6 +308,9 @@ export default {
       console.log(this.funds)
       console.log(this.selectedFunds)
     },
+    getAssessments(assessor) {
+      return assessor.fundSelection.map(s=>s.fundId).map( fId => this.funds[fId].assessments.filter(ass=>ass.idAssessor===assessor.id) ).flat()
+    },
     setFilteredAssessors() {
       let filteredIds = [];
       
@@ -328,7 +335,6 @@ export default {
       filteredIds = [...new Set(filteredIds)].flat()
       this.filteredAssessors = filteredIds.map( (assessorId) => ({
         id: assessorId,
-        assessments: this.selectedFunds.map( (f) => f.assessments.filter(ass=>ass.idAssessor===assessorId) ).flat(),
         fundSelection: this.selectedFunds.map( (f) => {
           return {
             fundId: f.id,
@@ -391,7 +397,7 @@ export default {
           }
         })
       }
-      // if not Fund Challenges, all assessors from such Fund are ignored from filter (the Fund will be only info-displayed)
+      // if not Fund Proposals, all assessors from such Fund are ignored from filter (the Fund will be only info-displayed)
       return filteredIds
     },
     filterAssessorsByRange(ids, fId) {
@@ -405,26 +411,13 @@ export default {
         )        
       return filteredIds
     },
-    // filterAssessmentsByChallenge(assessments) {
-    //   let filteredAssessments = []
-    //   this.selectedFunds.forEach( (fund) => {
-    //     filteredAssessments = filteredAssessments.concat( assessments.filter( (ass) => this.selectedChallenges.filter(ch => ch.fundId===fund.id).map(ch=>ch.id).includes(ass.challengeId) ) )
-    //   })
-    //   return filteredAssessments
-    // },
-    // filterAssessmentsByProposal(assessments) {
-    //   let filteredAssessments = []
-    //   this.selectedFunds.forEach( (fund) => {
-    //     filteredAssessments = filteredAssessments.concat( assessments.filter( (ass) => this.selectedProposals.filter(p => p.fundId===fund.id).map(p=>p.id).includes(ass.proposalId) ) )
-    //   })
-    //   return filteredAssessments
-    // },
     updateFundFilters(){
       this.loadDropdownChallenges()    // populate Challenges filter
       this.loadDropdownProposals()     // populate Proposals filter
       this.updateSearchStatus()
     },
     updateChallengeFilters(){
+      this.updateSelectedProposals()
       this.loadDropdownProposals()     // populate Proposals filter
       this.updateSearchStatus()
     },
@@ -435,6 +428,9 @@ export default {
     },
     updateSearchStatus() {
       (this.hasSearch) ? this.searchStatus=true : this.searchStatus=false
+    },
+    updateSelectedProposals() {
+      this.selectedProposals = this.selectedProposals.filter( p => this.selectedChallenges.filter(ch=>ch.fundId===p.fundId).map(ch=>ch.id).includes(p.challengeId) )
     },
     loadDropdownFunds(text) {
       let dropdown;
