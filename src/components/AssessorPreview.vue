@@ -8,21 +8,25 @@
               <b-icon icon="account-details" size="is-medium"></b-icon>
           </div>
           <div class="media-content">
-            <h2 class="title">{{assessorId}}</h2>
+            <h2 class="title">{{assessor.id}}</h2>
           </div>
         </div>
-        <h4> {{assessments.length}} assessed proposals identified for this search:</h4>
+        <h4> {{assessor.assessments.length}} <em>assessments</em> identified for this search:</h4>
         <b-table
           :data="tableData"
           ref="table"
           detailed
           hoverable
           custom-detail-row
-          detail-key="proposal"
+          detail-key="id"
           @details-open="(row, index) => $buefy.toast.open(`Expanded ${row.proposal}`)"
           :show-detail-icon="true">
 
-          <b-table-column field="proposal" label="Title" v-slot="props">
+          <b-table-column field="id" label="ID" v-slot="props">
+            <b>{{ props.row.id }}</b>
+          </b-table-column>
+
+          <b-table-column field="proposal" label="Proposal title" v-slot="props">
             <b>{{ props.row.proposal }}</b>
           </b-table-column>
 
@@ -41,6 +45,7 @@
           <template slot="detail" slot-scope="props">
             <tr v-for="item in props.row.items" :key="item.id">
               <td></td>
+              <td class="has-text-centered">{{ item.id }}</td>
               <td><a @click="goToProposal(item)">{{ item.proposal }}</a></td>
               <td class="has-text-centered">{{ item.count }}</td>
               <td class="has-text-centered">{{ item.challenge }}</td>
@@ -58,7 +63,7 @@
 
 export default {
   name: 'AssessorPreview',
-  props: ['assessorId', 'funds', 'challenges', 'proposals', 'assessments'],
+  props: ['assessor', 'funds'],
   data() {
     return {
     }
@@ -70,6 +75,7 @@ export default {
     tableData() {
       const data =[];
       let template = {
+        id: '',
         proposal: '',
         count: '',
         challenge: '',
@@ -78,14 +84,15 @@ export default {
       };
       
       // push Fund-N templateData to const < data >
-      this.funds.forEach( (fund) => data.push(this.getFundData(fund, template)) )
+      this.assessor.fundSelection.forEach( (fSelection) => data.push(this.getFundData(fSelection.fundId, template)) )
       return data
     },
   },
   methods: {
-    getFundData(fund, templateData) {
+    getFundData(fId, templateData) {
       /*
       templateData = {
+            id: '',
             proposal: '',
             count: '',
             challenge: '',
@@ -94,13 +101,15 @@ export default {
           }
       */
       const data = {...templateData};
-      let fundAssessments = this.assessments.filter( (ass) => ass.fundId === fund.id );
+      let fundAssessments = this.assessor.assessments.filter( (ass) => ass.fundId === fId );
+      // id
+      data.id = '';
       // proposal
-      data.proposal = this.funds.filter(f=>f.id===fund.id)[0].title.concat(" ", "assessed proposals");
+      data.proposal = this.funds[fId].title.concat(" ", "assessed proposals");
       // count
       data.count = fundAssessments.length;
       // challenge
-      data.challenge = fund.id.toUpperCase().concat(' challenges');
+      data.challenge = fId.toUpperCase().concat(' challenges');
       // assessment
       data.assessment = '';
       // items
@@ -111,6 +120,7 @@ export default {
     getAssessmentData (assessment, templateData) {
       /*
       templateData = {
+            id: '',
             proposal: '',
             count: '',
             challenge: '',
@@ -119,11 +129,11 @@ export default {
           }
       */
       const data = {...templateData};
+      data.id = assessment.id;
       data.proposal = assessment.proposalTitle;
       data.count = '';
       data.challenge = assessment.challengeTitle.split(": ").pop();
       data.assessment = 'open';
-      data.id = assessment.id;
       data.url = assessment.proposalUrl;
       return data
     },

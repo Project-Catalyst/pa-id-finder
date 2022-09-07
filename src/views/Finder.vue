@@ -12,7 +12,7 @@
         <div class="default-filters columns is-multiline">
           <div class="column is-12">
             <!-- Fund Selection -->
-            <b-field label="Select from Funds"
+            <b-field label="Funds to include in the search"
             :type="{ 'is-danger': !hasFund }"
             :message="{ 'Fund selection is required': !hasFund }">
               <b-taginput
@@ -139,7 +139,7 @@
           <b-button 
             type="is-primary is-large"
             :disabled="!canSearch"
-            @click="filterIds">
+            @click="setFilteredAssessors">
             Search ID &nbsp; <b-icon v-if="searchStatus" icon="update" size="is-small"></b-icon>
           </b-button>
         </b-tooltip>
@@ -148,19 +148,19 @@
 
     <section class="box list-problems" v-if="hasSearch">
       <!-- <div class="title">Searched PA-IDs</div> -->
-      <div class="subtitle" v-if="filteredAssessments.length === 0">
+      <div class="subtitle" v-if="filteredAssessors.length === 0">
         There is no PA-ID identified for this search configuration.
       </div>
-      <div class="list content">
-        <assessor-preview
-          :key="id"
-          v-for="id in filteredIds"
-          :assessorId="id"
-          :funds="selectedFunds"
-          :challenges="selectedChallenges"
-          :proposals="selectedProposals"
-          :assessments="assessmentsFromAssessor(id)"
-        />
+      <div v-else>
+        <p><small>There are {{filteredAssessors.lenght}} assessors identified for this search</small></p>
+        <div class="list content">
+          <assessor-preview
+            :key="assessor.id"
+            v-for="assessor in filteredAssessors"
+            :assessor="assessor"
+            :funds="funds"
+          />
+        </div>
       </div>
     </section>
   </div>
@@ -224,7 +224,7 @@ export default {
           proposals: []
         }
       },
-      filteredAssessments: [],
+      filteredAssessors: [],
       hasSearch: false,
       searchStatus: false,
       minSlice: 20,
@@ -272,9 +272,6 @@ export default {
         this.setValue('assessmentText', val)
       }, 500)
     },
-    filteredIds() {
-      return [...new Set(this.filteredAssessments.map( (ass) => ass.idAssessor ))];
-    },
     filteredChallenges(){
       if(this.selectedFunds.length > 0){
         let selection = [];
@@ -307,64 +304,121 @@ export default {
       console.log(this.funds)
       console.log(this.selectedFunds)
     },
-    assessmentsFromAssessor(id) {
-      return this.filteredAssessments.filter( (ass) => ass.idAssessor===id )
-    },
-    filterIds() {
-
-      let filteredAssessments = this.selectedFunds.map( (fund) => fund.assessments ).flat()
+    setFilteredAssessors() {
+      let filteredIds = [];
       
-      if(this.selectedChallenges.length > 0) { 
-        filteredAssessments = this.filterAssessmentsByChallenge(filteredAssessments)
-      }
+      this.selectedFunds.map(f=>f.id).forEach( (fId) => {
+        
+        let assessorsIds = [...new Set(this.funds[fId].assessments.map(ass=>ass.idAssessor))]
+        if(this.selectedChallenges.length > 0) { 
+          assessorsIds = this.filterAssessorsByChallenge(assessorsIds, fId)
+        }
+        if(this.selectedProposals.length > 0) {
+          assessorsIds = this.filterAssessorsByProposal(assessorsIds, fId)
+        }
+        if(this.hasNumberRange) {
+          assessorsIds = this.filterAssessorsByRange(assessorsIds, fId)
+        }
+        if(this.hasTextSlice) {
+          assessorsIds = this.filterAssessmentsByText(assessorsIds, fId, this.assessmentSlice)
+        }    
 
-      if(this.selectedProposals.length > 0) {
-        filteredAssessments = this.filterAssessmentsByProposal(filteredAssessments)
-      }
-
-      if(this.hasNumberRange) {
-        filteredAssessments = this.filterAssessmentsByRange(filteredAssessments)
-      }
-
-      if(this.hasTextSlice) {
-        filteredAssessments = this.filterAssessmentsByText(filteredAssessments, this.assessmentSlice)
-      }    
-
+        filteredIds.push(assessorsIds)
+      })
+      filteredIds = [...new Set(filteredIds)].flat()
+      this.filteredAssessors = filteredIds.map( (assessorId) => ({
+        id: assessorId,
+        assessments: this.selectedFunds.map( (f) => f.assessments.filter(ass=>ass.idAssessor===assessorId) ).flat(),
+        fundSelection: this.selectedFunds.map( (f) => {
+          return {
+            fundId: f.id,
+            selectedChallenges: this.selectedChallenges.filter(ch => ch.fundId===f.id ).map(ch => ch.id),
+            selectedProposals: this.selectedProposals.filter(p => p.fundId===f.id ).map(p => p.id),
+            selectedRange: [this.selectedAssessmentMin, this.selectedAssessmentMax],
+            textSlice: this.assessmentSlice
+          }
+        })
+      }))
+      console.log(this.filteredAssessors.length)
       this.searchStatus = false;
       this.hasSearch = true;
-      this.filteredAssessments = filteredAssessments;
     },
-    filterAssessmentsByText(assessments, text) {
-      return assessments.filter( (ass) => {
-        let reviews = [ass.assessmentNoteAuditability, ass.assessmentNoteFeasibility, ass.assessmentNoteImpact];
-        return reviews.join('; ').includes(text)
-      })
+    filterAssessmentsByText(ids, fId, text) {
+        let textAssessments = this.funds[fId].assessments.filter( (ass) => {
+          if( ids.includes(ass.idAssessor) ) {
+            let reviews = [ass.assessmentNoteAuditability, ass.assessmentNoteFeasibility, ass.assessmentNoteImpact];
+            return reviews.join('; ').includes(text)
+          }
+          else { false }
+        })
+      return [...new Set(textAssessments.map(ass=>ass.idAssessor))]
     },
-    filterAssessmentsByChallenge(assessments) {
-      let filteredAssessments = []
-      this.selectedFunds.forEach( (fund) => {
-        filteredAssessments = filteredAssessments.concat( assessments.filter( (ass) => this.selectedChallenges.filter(ch => ch.fundId===fund.id).map(ch=>ch.id).includes(ass.challengeId) ) )
-      })
-      return filteredAssessments
+    filterAssessorsByChallenge(ids, fId) {
+      let checker = arr => arr.every(v => v === true);
+      let fChallenges = this.selectedChallenges.filter(ch => ch.fundId===fId).map(ch => (
+        {
+          id: ch.id,
+          assessments: this.funds[fId].assessments.filter( (ass) => ass.challengeId===ch.id )
+        }
+      ))
+      let filteredIds = [];
+       
+      if(fChallenges.length > 0) {
+        ids.forEach( (assessorId) => {
+          let chHasAssessor = fChallenges.map( ch => ch.assessments.filter(ass => ass.idAssessor===assessorId).length > 0 )
+          if( checker(chHasAssessor) ){
+            filteredIds.push(assessorId)
+          }
+        })
+      }
+      // if not Fund Challenges, all assessors from such Fund are ignored from filter (the Fund will be only info-displayed)
+      return filteredIds
+
     },
-    filterAssessmentsByProposal(assessments) {
-      let filteredAssessments = []
-      this.selectedFunds.forEach( (fund) => {
-        filteredAssessments = filteredAssessments.concat( assessments.filter( (ass) => this.selectedProposals.filter(p => p.fundId===fund.id).map(p=>p.id).includes(ass.proposalId) ) )
-      })
-      return filteredAssessments
+    filterAssessorsByProposal(ids, fId) {
+      let checker = arr => arr.every(v => v === true);
+      let fProposals = this.selectedProposals.filter(p => p.fundId===fId).map(p => ({
+        id: p.id,
+        assessments: this.funds[fId].assessments.filter( (ass) => ass.proposalId===p.id )
+      }))
+      let filteredIds = [];
+       
+      if(fProposals.length > 0) {
+        ids.forEach( (assessorId) => {
+          let pHasAssessor = fProposals.map( p => p.assessments.filter(ass => ass.idAssessor===assessorId).length > 0 )
+          if( checker(pHasAssessor) ){
+            filteredIds.push(assessorId)
+          }
+        })
+      }
+      // if not Fund Challenges, all assessors from such Fund are ignored from filter (the Fund will be only info-displayed)
+      return filteredIds
     },
-    filterAssessmentsByRange(assessments) {
-      let filteredAssessments = []
-      this.selectedFunds.forEach( (fund) => {
-        let assIds = assessments.filter( (ass) => ass.fundId===fund.id ).map( (ass) => ass.idAssessor )
-        let occurrences = assIds.reduce(function (acc, curr) {
+    filterAssessorsByRange(ids, fId) {
+        let freqIds = this.funds[fId].assessments.map( (ass) => ass.idAssessor )
+        let occurrences = freqIds.reduce(function (acc, curr) {
           return acc[curr] ? ++acc[curr] : acc[curr] = 1, acc
         }, {}); 
-        filteredAssessments = filteredAssessments.concat( assessments.filter( (ass) => occurrences[ass.idAssessor] >= this.selectedAssessmentMin && occurrences[ass.idAssessor] <= this.selectedAssessmentMax ) )
-      })
-      return filteredAssessments
+
+        let filteredIds = ids.filter( (assessorId) => 
+          occurrences[assessorId] >= this.selectedAssessmentMin && occurrences[assessorId] <= this.selectedAssessmentMax 
+        )        
+      return filteredIds
     },
+    // filterAssessmentsByChallenge(assessments) {
+    //   let filteredAssessments = []
+    //   this.selectedFunds.forEach( (fund) => {
+    //     filteredAssessments = filteredAssessments.concat( assessments.filter( (ass) => this.selectedChallenges.filter(ch => ch.fundId===fund.id).map(ch=>ch.id).includes(ass.challengeId) ) )
+    //   })
+    //   return filteredAssessments
+    // },
+    // filterAssessmentsByProposal(assessments) {
+    //   let filteredAssessments = []
+    //   this.selectedFunds.forEach( (fund) => {
+    //     filteredAssessments = filteredAssessments.concat( assessments.filter( (ass) => this.selectedProposals.filter(p => p.fundId===fund.id).map(p=>p.id).includes(ass.proposalId) ) )
+    //   })
+    //   return filteredAssessments
+    // },
     updateFundFilters(){
       this.loadDropdownChallenges()    // populate Challenges filter
       this.loadDropdownProposals()     // populate Proposals filter
@@ -436,6 +490,7 @@ export default {
     clearNumberFilter() {
       this.selectedAssessmentMin = undefined;
       this.selectedAssessmentMax = undefined;
+      this.updateSearchStatus()
     },
     setValue(field, val) {
       if(field === 'assessmentText'){ this.assessmentSlice = val }
