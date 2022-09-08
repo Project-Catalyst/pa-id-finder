@@ -8,7 +8,7 @@
               <b-icon icon="account-details" size="is-medium"></b-icon>
           </div>
           <div class="media-content">
-            <h2 class="title">{{assessor.id}}</h2>
+            <h2 class="title">{{assessorId}}</h2>
           </div>
         </div>
         <h4> {{assessments.length}} <em>assessments</em> identified for this search:</h4>
@@ -63,9 +63,10 @@
 
 export default {
   name: 'AssessorPreview',
-  props: ['funds', 'assessor', 'assessments'],
+  props: ['funds', 'assessorId', 'assessments', 'filterSelection'],
   data() {
     return {
+      filteredAssessments: []
     }
   },
   computed: {
@@ -82,9 +83,8 @@ export default {
         assessment: 'open'
         // items: []
       };
-      
       // push Fund-N templateData to const < data >
-      this.assessor.fundSelection.forEach( (fSelection) => data.push(this.getFundData(fSelection.fundId, template)) )
+      this.filterSelection.forEach( (fSelection) => data.push(this.getFundData(fSelection.fundId, template)) )
       return data
     },
   },
