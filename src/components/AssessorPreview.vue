@@ -83,8 +83,7 @@ export default {
         assessment: 'open'
         // items: []
       };
-      // push Fund-N templateData to const < data >
-      this.filterSelection.forEach( (fSelection) => data.push(this.getFundData(fSelection.fundId, template)) )
+      data.push(this.getFundData(this.filterSelection.fundId, template))
       return data
     },
   },

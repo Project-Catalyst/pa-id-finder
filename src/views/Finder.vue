@@ -12,31 +12,20 @@
         <div class="default-filters columns is-multiline">
           <div class="column is-12">
             <!-- Fund Selection -->
-            <b-field label="Funds to include in the search"
+            <b-field label="Fund to search" class="column is-6"
             :type="{ 'is-danger': !hasFund }"
             :message="{ 'Fund selection is required': !hasFund }">
-              <b-taginput
-                  ref="fundTagSelection"
-                  v-model="selectedFunds"
-                  :data="dropdownFunds"
-                  autocomplete
-                  field="title"
-                  icon="label"
-                  :open-on-focus="true"
-                  placeholder="Filter by specific funds"
-                  @remove="loadDropdownFunds(false)"
-                  @typing="loadDropdownFunds"
-                  @input="updateFundFilters()"
-                  type="is-primary is-light"
-                  close-type="is-primary is-light"
-                  attached>
-                  <template v-slot="props">
-                      {{props.option.title}}
-                  </template>
-                  <template #empty>
-                      There are no items
-                  </template>
-              </b-taginput>
+              <b-select placeholder="Choose a Fund"
+                v-model="selectedFund"
+                @input="updateFundFilters()"
+                expanded>
+                <option
+                    v-for="fund in dropdownFunds"
+                    :value="fund"
+                    :key="fund.id">
+                    {{ fund.title }}
+                </option>
+              </b-select>
             </b-field>
             <!-- Text Assessment Input -->
             <b-field><template #label>Assessment Text</template>
@@ -235,8 +224,10 @@ export default {
       minSlice: 20,
       assessmentSlice: '',
       advancedFilters: false,
-      dropdownFunds: [],
-      selectedFunds: [],
+      selectedFund: {
+        id: 'empty',
+        title: '-- Select a Fund --'
+      },
       dropdownChallenges: [],
       selectedChallenges: [],
       dropdownProposals: [],
@@ -246,11 +237,17 @@ export default {
     }
   },
   computed: {
-    searchCount() {
-      return this.filteredAssessors.lenght
+    dropdownFunds() {
+      return [
+        {
+          id: 'empty',
+          title: '-- Select a Fund --'
+        }].concat(this.fundsKeys.map(fId => ({...this.funds[fId]})))
     },
     hasFund() {
-      return this.selectedFunds.length > 0
+      return (this.selectedFund.id==='empty')
+      ? false
+      : true
     },
     hasTextSlice() {
       return this.assessmentSlice.length >= this.minSlice
@@ -271,6 +268,9 @@ export default {
     canSearch() {
       return this.hasFund && (this.hasTextSlice || this.hasAdvancedFiltering) && !this.invalidRange
     },
+    searchCount() {
+      return this.filteredAssessors.lenght
+    },
     advancedFiltersMsg(){
       return (this.advancedFilters) ? 'Close advanced filtering' : 'Open advanced filtering'
     },
@@ -285,42 +285,34 @@ export default {
         this.setValue('assessmentText', val)
       }, 500)
     },
-    filteredChallenges(){
-      if(this.selectedFunds.length > 0){
-        let selection = [];
-        this.selectedFunds.forEach( (f) => {
-          selection = selection.concat( f.challenges )
-        })
-        return selection
-      }
-      return []
+    fundChallenges(){
+      return (this.hasFund)
+      ? this.selectedFund.challenges
+      : []
+    },
+    fundAssessors() {
+      return [...new Set(this.selectedFund.assessments.map(ass=>ass.idAssessor))]
+    },
+    fundAssessments() {
+      return this.selectedFund.assessments
     },
     filteredProposals(){
-      if(this.selectedFunds.length > 0){
-        let selection = [];
-        this.selectedFunds.forEach( (f) => {
-          if( this.selectedChallenges.map(ch=>ch.fundId).includes(f.id) ) {
-            let chRef = this.selectedChallenges.filter(ch => ch.fundId===f.id).map( (ch) => ch.id)
-            selection = selection.concat( f.proposals.filter( (p) => chRef.includes(p.challengeId) ) )
-          }
-          else {
-            selection = selection.concat( f.proposals )
-          }
-        })
-        return selection
+      if(this.hasFund){
+        return ( this.selectedChallenges.length > 0 )
+        ? this.selectedFund.proposals.filter( (p) => this.selectedChallenges.map(ch=>ch.id).includes(p.challengeId) ) 
+        : this.selectedFund.proposals
       }
       return []
     },
     filterSelection() {
-      return this.selectedFunds.map( (f) => {
-          return {
-            fundId: f.id,
-            selectedChallenges: this.selectedChallenges.filter(ch => ch.fundId===f.id ).map(ch => ch.id),
-            selectedProposals: this.selectedProposals.filter(p => p.fundId===f.id ).map(p => p.id),
-            selectedRange: [this.selectedAssessmentMin, this.selectedAssessmentMax],
-            textSlice: this.assessmentSlice
-          }
-        })
+      let f = this.selectedFund;
+      return {
+        fundId: f.id,
+        selectedChallenges: this.selectedChallenges.filter(ch => ch.fundId===f.id ).map(ch => ch.id),
+        selectedProposals: this.selectedProposals.filter(p => p.fundId===f.id ).map(p => p.id),
+        selectedRange: [this.selectedAssessmentMin, this.selectedAssessmentMax],
+        textSlice: this.assessmentSlice
+      }
     }
   },
   methods: {
@@ -332,41 +324,32 @@ export default {
       return this.filteredAssessments.filter(ass => ass.idAssessor===assessorId)
     },
     setFilteredAssessors() {
-      let filteredIds = [];
-      let filteredAssessments = [];
-      
-      this.selectedFunds.map(f=>f.id).forEach( (fId) => {
-        
-        let fFilter = {
-          ids: [...new Set(this.funds[fId].assessments.map(ass=>ass.idAssessor))],
-          assessments: this.funds[fId].assessments
-        }
+      let filter = {
+        ids: this.fundAssessors,
+        assessments: this.fundAssessments
+      }
 
-        if(this.selectedChallenges.length > 0) { 
-          fFilter = this.filterByChallenge(fFilter.ids, fId)
-        }
-        if(this.selectedProposals.length > 0) {
-          fFilter = this.filterByProposal(fFilter.ids, fId)
-        }
-        if(this.hasNumberRange) {
-          fFilter = this.filterAssessorsByRange(fFilter.ids, fFilter.assessments, fId)
-        }
-        if(this.hasTextSlice) {
-          fFilter = this.filterByText(fFilter.ids, fId, this.assessmentSlice)
-        }    
-
-        filteredIds.push(fFilter.ids)
-        filteredAssessments.push(fFilter.assessments)
-      })
-      this.filteredAssessors = [...new Set(filteredIds.flat())];
-      this.filteredAssessments = filteredAssessments.flat();
-      console.log(this.filteredAssessors.length)
-      console.log(this.filteredAssessments)
+      if(this.selectedChallenges.length > 0) { 
+        filter = this.filterByChallenge(filter.ids, filter.assessments)
+      }
+      if(this.selectedProposals.length > 0) {
+        filter = this.filterByProposal(filter.ids, filter.assessments)
+      }
+      if(this.hasNumberRange) {
+        filter = this.filterAssessorsByRange(filter.ids, filter.assessments)
+      }
+      if(this.hasTextSlice) {
+        filter = this.filterByText(filter.ids, filter.assessments, this.assessmentSlice)
+      }    
+      this.filteredAssessors = filter.ids;
+      this.filteredAssessments = filter.assessments;
+      // console.log(this.filteredAssessors.length)
+      // console.log(this.filteredAssessments)
       this.searchStatus = false;
       this.hasSearch = true;
     },
-    filterByText(ids, fId, text) {
-        let textAssessments = this.funds[fId].assessments.filter( (ass) => {
+    filterByText(ids, assessments, text) {
+        let textAssessments = assessments.filter( (ass) => {
           if( ids.includes(ass.idAssessor) ) {
             let reviews = [ass.assessmentNoteAuditability, ass.assessmentNoteFeasibility, ass.assessmentNoteImpact];
             return reviews.join('; ').includes(text)
@@ -378,70 +361,60 @@ export default {
           assessments: textAssessments
         }
     },
-    filterByChallenge(ids, fId) {
+    filterByChallenge(ids, assessments) {
       let checker = arr => arr.every(v => v === true);
-      let fChallenges = this.selectedChallenges.filter(ch => ch.fundId===fId).map(ch => (
-        {
+      let sChallenges = this.selectedChallenges.map(ch => ({
           id: ch.id,
-          assessments: this.funds[fId].assessments.filter( (ass) => ass.challengeId===ch.id )
+          assessments: assessments.filter( (ass) => ass.challengeId===ch.id )
         }
       ))
       let filteredIds = [];
       let filteredAssessments = [];
-       
-      if(fChallenges.length > 0) {
-        ids.forEach( (assessorId) => {
-          let chHasAssessor = fChallenges.map( ch => ch.assessments.filter(ass => ass.idAssessor===assessorId).length > 0 )
-          if( checker(chHasAssessor) ){
-            filteredIds.push(assessorId)
-            filteredAssessments = filteredAssessments.concat( fChallenges.map( ch => ch.assessments.filter(ass => ass.idAssessor===assessorId).flat() ))
-          }
-        })
-      }
-      // if not Fund Challenges, all assessors from such Fund are ignored from filter (the Fund will be only info-displayed)
+      ids.forEach( (assessorId) => {
+        let chHasAssessor = sChallenges.map( ch => ch.assessments.filter(ass => ass.idAssessor===assessorId).length > 0 )
+        if( checker(chHasAssessor) ){   // verify if assessorId has assessments in all selected Challenges
+          filteredIds.push(assessorId)
+          filteredAssessments = filteredAssessments.concat( sChallenges.map( ch => ch.assessments.filter(ass => ass.idAssessor===assessorId).flat() ))
+        }
+      })
       return {
           ids: filteredIds,
           assessments: filteredAssessments.flat()
         }
 
     },
-    filterByProposal(ids, fId) {
+    filterByProposal(ids, assessments) {
       let checker = arr => arr.every(v => v === true);
-      let fProposals = this.selectedProposals.filter(p => p.fundId===fId).map(p => ({
+      let sProposals = this.selectedProposals.map(p => ({
         id: p.id,
-        assessments: this.funds[fId].assessments.filter( (ass) => ass.proposalId===p.id )
+        assessments: assessments.filter( (ass) => ass.proposalId===p.id )
       }))
       let filteredIds = [];
       let filteredAssessments = [];
-       
-      if(fProposals.length > 0) {
-        ids.forEach( (assessorId) => {
-          let pHasAssessor = fProposals.map( p => p.assessments.filter(ass => ass.idAssessor===assessorId).length > 0 )
-          if( checker(pHasAssessor) ){
-            filteredIds.push(assessorId)
-            filteredAssessments = filteredAssessments.concat( fProposals.map( p => p.assessments.filter(ass => ass.idAssessor===assessorId).flat() ))
-          }
-        })
-      }
-      // if not Fund Proposals, all assessors from such Fund are ignored from filter (the Fund will be only info-displayed)
+      ids.forEach( (assessorId) => {
+        let pHasAssessor = sProposals.map( p => p.assessments.filter(ass => ass.idAssessor===assessorId).length > 0 )
+        if( checker(pHasAssessor) ){    // verify if assessorId has assessments in all selected Proposals
+          filteredIds.push(assessorId)
+          filteredAssessments = filteredAssessments.concat( sProposals.map( p => p.assessments.filter(ass => ass.idAssessor===assessorId).flat() ))
+        }
+      })
       return {
           ids: filteredIds,
           assessments: filteredAssessments.flat()
         }
     },
-    filterAssessorsByRange(ids, assessments, fId) {
-        let freqIds = this.funds[fId].assessments.map( (ass) => ass.idAssessor )
+    filterAssessorsByRange(ids, assessments) {
+        let freqIds = this.selectedFund.assessments.map( (ass) => ass.idAssessor )
         let occurrences = freqIds.reduce(function (acc, curr) {
           return acc[curr] ? ++acc[curr] : acc[curr] = 1, acc
         }, {}); 
-
-        let filteredIds = ids.filter( (assessorId) => 
-          occurrences[assessorId] >= this.selectedAssessmentMin && occurrences[assessorId] <= this.selectedAssessmentMax 
-        )
-        let filteredAssessments = assessments.filter( ass => filteredIds.includes(ass.idAssessor) )   
+        // let filteredIds = ids.filter( (assessorId) => 
+        //   occurrences[assessorId] >= this.selectedAssessmentMin && occurrences[assessorId] <= this.selectedAssessmentMax 
+        // )
+        // let filteredAssessments = assessments.filter( ass => filteredIds.includes(ass.idAssessor) )   
       return {
-          ids: filteredIds,
-          assessments: filteredAssessments
+          ids: ids.filter( (assessorId) => occurrences[assessorId] >= this.selectedAssessmentMin && occurrences[assessorId] <= this.selectedAssessmentMax ),
+          assessments: assessments.filter( ass => filteredIds.includes(ass.idAssessor) )
         }
     },
     updateFundFilters(){
@@ -454,46 +427,23 @@ export default {
       this.loadDropdownProposals()     // populate Proposals filter
       this.updateSearchStatus()
     },
-    // updateNumberFilters(filterRef) {
-    //   if(filterRef === 'min' && typeof(this.selectedAssessmentMax) === 'undefined') { this.selectedAssessmentMax = 3 }
-    //   if(filterRef === 'max' && typeof(this.selectedAssessmentMin) === 'undefined') { this.selectedAssessmentMin = 0 }
-    //   this.updateSearchStatus()
-    // },
     updateSearchStatus() {
       (this.hasSearch) ? this.searchStatus=true : this.searchStatus=false
     },
     updateSelectedProposals() {
       this.selectedProposals = this.selectedProposals.filter( p => this.selectedChallenges.filter(ch=>ch.fundId===p.fundId).map(ch=>ch.id).includes(p.challengeId) )
     },
-    loadDropdownFunds(text) {
-      let dropdown;
-      let selection = Object.values(this.funds);
-      if (text) {
-        dropdown = this.funds.filter((option) => {
-          return option.title
-            .toString()
-            .toLowerCase()
-            .indexOf(text.toLowerCase()) >= 0
-        })
-      } else {
-        dropdown = selection
-      }
-      this.dropdownFunds = dropdown.filter((option) => {
-        return this.selectedFunds.indexOf(option) === -1
-      })
-    },
     loadDropdownChallenges(text) {
       let dropdown;
-      let selection = this.filteredChallenges;
       if (text) {
-        dropdown = selection.filter((option) => {
+        dropdown = this.fundChallenges.filter((option) => {
           return option.title
             .toString()
             .toLowerCase()
             .indexOf(text.toLowerCase()) >= 0
         })
       } else {
-        dropdown = selection
+        dropdown = this.fundChallenges
       }
       this.dropdownChallenges = dropdown.filter((option) => {
         return this.selectedChallenges.indexOf(option) === -1
@@ -501,16 +451,15 @@ export default {
     },
     loadDropdownProposals(text) {
       let dropdown;
-      let selection = this.filteredProposals;
       if (text) {
-        dropdown = selection.filter((option) => {
+        dropdown = this.filteredProposals.filter((option) => {
           return option.title
             .toString()
             .toLowerCase()
             .indexOf(text.toLowerCase()) >= 0
         })
       } else {
-        dropdown = selection
+        dropdown = this.filteredProposals
       }
       this.dropdownProposals = dropdown.filter((option) => {
         return this.selectedProposals.indexOf(option) === -1
@@ -562,9 +511,6 @@ export default {
     })
     this.funds = {...this.funds}
     console.log(this.funds)
-    this.loadDropdownFunds()         // populate Funds filter
-    this.loadDropdownChallenges()    // populate Challenges filter
-    this.loadDropdownProposals()     // populate Proposals filter
   }
 }
 </script>
