@@ -26,15 +26,19 @@
             <b>{{ props.row.proposal }}</b>
           </b-table-column>
 
-          <b-table-column field="id" label="Assessment ID" cellClass="has-text-centered" v-slot="props">
-            <b>{{ props.row.id }}<b-icon icon="email-open-outline"></b-icon></b>
+          <b-table-column field="id" label="Assessment ID" v-slot="props">
+            <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+              {{ props.row.id }}<b-icon icon="email-open-outline"></b-icon></b>
           </b-table-column>
 
           <template slot="detail" slot-scope="props">
             <tr v-for="item in props.row.items" :key="item.id">
               <td></td>
               <td><a @click="goToProposal(item)">{{ item.proposal }}</a></td>
-              <td class="has-text-centered"><a @click="goToAssessment(item)">#{{item.id}}</a></td>
+              <td><a @click="goToAssessment(item)">
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                #{{item.id}}
+              </a></td>
             </tr>
           </template>
         </b-table>
@@ -49,16 +53,13 @@ import AssessmentModal from '@/components/AssessmentModal.vue'
 
 export default {
   name: 'AssessorPreview',
-  props: ['funds', 'assessorId', 'assessments', 'filterSelection'],
+  props: ['assessorId', 'assessments', 'filterSelection'],
   data() {
     return {
       filteredAssessments: []
     }
   },
   computed: {
-    fundsText() {
-      return this.funds.map(f => f.title)
-    },
     tableData() {
       const data =[];
       let template = {
@@ -67,7 +68,14 @@ export default {
         challenge: '',
         // items: []
       };
-      this.filterSelection.selectedChallenges.forEach( (ch) => data.push(this.getChallengeData(ch, template)) )
+      let challenges = []
+      if( this.filterSelection.selectedChallenges.length === 0 ){
+        let chIds = [...new Set(this.assessments.map(ass=>ass.challengeId))]
+        challenges = chIds.map(chId => this.getChallenge(chId))
+      }
+      else { challenges = this.filterSelection.selectedChallenges }
+
+      challenges.forEach( (ch) => data.push(this.getChallengeData(ch, template)) )
       return data
     },
   },
@@ -102,6 +110,9 @@ export default {
       data.challenge = '';
       data.url = assessment.proposalUrl;
       return data
+    },
+    getChallenge(id){
+      return this.filterSelection.selectedFund.challenges.filter(ch=>ch.id===id)[0]
     },
     goToProposal(item) {
       window.open(item.url, '_blank');

@@ -304,7 +304,7 @@ export default {
         selectedChallenges: this.selectedChallenges,
         selectedProposals: this.selectedProposals,
         selectedRange: [this.selectedAssessmentMin, this.selectedAssessmentMax],
-        textSlice: this.assessmentSlice
+        textSlice: (this.hasTextSlice) ? this.assessmentSlice : ''
       }
     }
   },
@@ -395,12 +395,12 @@ export default {
         let occurrences = freqIds.reduce(function (acc, curr) {
           return acc[curr] ? ++acc[curr] : acc[curr] = 1, acc
         }, {}); 
-        // let filteredIds = ids.filter( (assessorId) => 
-        //   occurrences[assessorId] >= this.selectedAssessmentMin && occurrences[assessorId] <= this.selectedAssessmentMax 
-        // )
-        // let filteredAssessments = assessments.filter( ass => filteredIds.includes(ass.idAssessor) )   
+
+        let filteredIds = ids.filter( (assessorId) => 
+          occurrences[assessorId] >= this.selectedAssessmentMin && occurrences[assessorId] <= this.selectedAssessmentMax
+        ); 
       return {
-          ids: ids.filter( (assessorId) => occurrences[assessorId] >= this.selectedAssessmentMin && occurrences[assessorId] <= this.selectedAssessmentMax ),
+          ids: filteredIds,
           assessments: assessments.filter( ass => filteredIds.includes(ass.idAssessor) )
         }
     },
@@ -462,6 +462,7 @@ export default {
     }
   },
   mounted() {
+    const loadingComponent = this.$buefy.loading.open({})
     this.fundsKeys.forEach((f) => {
       CatalystAPI.assessments('f9').then((r) => { // change to <f>
         // compute properties
@@ -496,7 +497,8 @@ export default {
         )
       })
     })
-    this.funds = {...this.funds}
+    loadingComponent.close()
+    // this.funds = {...this.funds}
   }
 }
 </script>
