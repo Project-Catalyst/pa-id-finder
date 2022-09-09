@@ -18,38 +18,23 @@
           detailed
           hoverable
           custom-detail-row
-          detail-key="id"
+          detail-key="proposal"
           @details-open="(row, index) => $buefy.toast.open(`Expanded ${row.proposal}`)"
           :show-detail-icon="true">
-
-          <b-table-column field="id" label="ID" v-slot="props">
-            <b>{{ props.row.id }}</b>
-          </b-table-column>
-
-          <b-table-column field="proposal" label="Proposal title" v-slot="props">
+          
+          <b-table-column field="proposal" label="Assessed Proposal" v-slot="props">
             <b>{{ props.row.proposal }}</b>
           </b-table-column>
 
-          <b-table-column field="count" label="#" numeric centered v-slot="props">
-            <b>{{ props.row.count }}</b>
-          </b-table-column>
-
-          <b-table-column field="challenge" label="Challenge Setting" centered v-slot="props">
-            <b>{{ props.row.challenge }}</b>
-          </b-table-column>
-
-          <b-table-column field="assessment" label="See assessment" centered v-slot="props">
-            <b>{{ props.row.assessment }}</b>
+          <b-table-column field="id" label="Assessment ID" cellClass="has-text-centered" v-slot="props">
+            <b>{{ props.row.id }}<b-icon icon="email-open-outline"></b-icon></b>
           </b-table-column>
 
           <template slot="detail" slot-scope="props">
             <tr v-for="item in props.row.items" :key="item.id">
               <td></td>
-              <td class="has-text-centered">{{ item.id }}</td>
               <td><a @click="goToProposal(item)">{{ item.proposal }}</a></td>
-              <td class="has-text-centered">{{ item.count }}</td>
-              <td class="has-text-centered">{{ item.challenge }}</td>
-              <td class="has-text-centered">{{item.assessment}}</td>
+              <td class="has-text-centered"><a @click="goToAssessment(item)">#{{item.id}}</a></td>
             </tr>
           </template>
         </b-table>
@@ -60,6 +45,7 @@
 </template>
 
 <script>
+import AssessmentModal from '@/components/AssessmentModal.vue'
 
 export default {
   name: 'AssessorPreview',
@@ -78,66 +64,57 @@ export default {
       let template = {
         id: '',
         proposal: '',
-        count: '',
         challenge: '',
-        assessment: 'open'
         // items: []
       };
-      data.push(this.getFundData(this.filterSelection.fundId, template))
+      this.filterSelection.selectedChallenges.forEach( (ch) => data.push(this.getChallengeData(ch, template)) )
       return data
     },
   },
   methods: {
-    getFundData(fId, templateData) {
-      /*
-      templateData = {
-            id: '',
-            proposal: '',
-            count: '',
-            challenge: '',
-            assessment: 'open'
-            items: [] // [... assessmentData]
-          }
+    getChallengeData(challenge, templateData) { 
+      /* templateData = {
+          id: '',
+          proposal: '',
+          items: [] // [... assessmentData]
+        }
       */
       const data = {...templateData};
-      let fundAssessments = this.assessments.filter( (ass) => ass.fundId === fId );
+      let chAssessments = this.assessments.filter( (ass) => ass.challengeId === challenge.id );
       // id
       data.id = '';
       // proposal
-      data.proposal = this.funds[fId].title.concat(" ", "assessed proposals");
-      // count
-      data.count = fundAssessments.length;
-      // challenge
-      data.challenge = fId.toUpperCase().concat(' challenges');
-      // assessment
-      data.assessment = '';
+      data.proposal = 'Challenge: '.concat(challenge.title.split(": ").pop().concat(' (# ', chAssessments.length, ')'));
       // items
-      data.items = fundAssessments.map( (ass) => this.getAssessmentData(ass, templateData) );
+      data.items = chAssessments.map( (ass) => this.getAssessmentData(ass, templateData) );
       data.items.sort(this.sortAssessmentsByChallenge);
       return data
     },
     getAssessmentData (assessment, templateData) {
-      /*
-      templateData = {
-            id: '',
-            proposal: '',
-            count: '',
-            challenge: '',
-            assessment: 'open'
-            // items: []
-          }
+      /* templateData = {
+          id: '',
+          proposal: '',
+        }
       */
       const data = {...templateData};
       data.id = assessment.idAssessment;
       data.proposal = assessment.proposalTitle;
-      data.count = '';
-      data.challenge = assessment.challengeTitle.split(": ").pop();
-      data.assessment = 'open';
+      data.challenge = '';
       data.url = assessment.proposalUrl;
       return data
     },
     goToProposal(item) {
       window.open(item.url, '_blank');
+    },
+    goToAssessment(item) {
+      this.$buefy.modal.open({
+        component: AssessmentModal,
+        parent: this,
+        props: {
+          "assessment": this.assessments.filter(ass=>ass.idAssessment===item.id)[0],
+        },
+        trapFocus: true
+      })
     },
     sortAssessmentsByChallenge(a, b) {
       return a.challenge.localeCompare(b.challenge)

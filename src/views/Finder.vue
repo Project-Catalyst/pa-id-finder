@@ -115,12 +115,6 @@
             </b-field>
           </div>
 
-          <!-- <b-button 
-            type="is-primary is-small"
-            @click="logFunds">
-            Log funds
-          </b-button> -->
-
         </b-collapse>
       </div>
 
@@ -150,7 +144,7 @@
             v-for="assessor in filteredAssessors"
             :funds="funds"
             :assessorId="assessor"
-            :assessments="getAssessments(assessor)"
+            :assessments="getFilteredAssessments(assessor)"
             :filterSelection="filterSelection"        
           />
         </div>
@@ -305,22 +299,17 @@ export default {
       return []
     },
     filterSelection() {
-      let f = this.selectedFund;
       return {
-        fundId: f.id,
-        selectedChallenges: this.selectedChallenges.filter(ch => ch.fundId===f.id ).map(ch => ch.id),
-        selectedProposals: this.selectedProposals.filter(p => p.fundId===f.id ).map(p => p.id),
+        selectedFund: this.selectedFund,
+        selectedChallenges: this.selectedChallenges,
+        selectedProposals: this.selectedProposals,
         selectedRange: [this.selectedAssessmentMin, this.selectedAssessmentMax],
         textSlice: this.assessmentSlice
       }
     }
   },
   methods: {
-    logFunds(){
-      console.log(this.funds)
-      console.log(this.selectedFunds)
-    },
-    getAssessments(assessorId) {
+    getFilteredAssessments(assessorId) {
       return this.filteredAssessments.filter(ass => ass.idAssessor===assessorId)
     },
     setFilteredAssessors() {
@@ -343,8 +332,6 @@ export default {
       }    
       this.filteredAssessors = filter.ids;
       this.filteredAssessments = filter.assessments;
-      // console.log(this.filteredAssessors.length)
-      // console.log(this.filteredAssessments)
       this.searchStatus = false;
       this.hasSearch = true;
     },
@@ -510,7 +497,6 @@ export default {
       })
     })
     this.funds = {...this.funds}
-    console.log(this.funds)
   }
 }
 </script>
