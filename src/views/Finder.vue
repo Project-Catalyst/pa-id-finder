@@ -124,20 +124,21 @@
           <b-button 
             type="is-primary is-large"
             :disabled="!canSearch"
-            @click="setFilteredAssessors">
-            Search ID &nbsp; <b-icon v-if="searchStatus" icon="update" size="is-small"></b-icon>
+            @click="setFilteredAssessors()">
+            Search ID &nbsp; <b-icon v-if="updateSearch" icon="update" size="is-small"></b-icon>
           </b-button>
         </b-tooltip>
       </div>
     </section>
 
-    <section class="box list-problems" v-if="hasSearch">
+    <section ref="assessorIds" class="box list-problems" v-if="hasSearch">
+      <!-- <b-loading :is-full-page="false" v-model="isLoadingSearch"></b-loading> -->
       <!-- <div class="title">Searched PA-IDs</div> -->
       <div class="subtitle" v-if="filteredAssessors.length === 0">
         There is no PA-ID identified for this search configuration.
       </div>
       <div v-else>
-        <!-- <p><small>There are #{{searchCount}} assessors identified for this search</small></p> -->
+        <p><small>There are #{{filteredAssessors.length}} assessors identified for this search</small></p>
         <div class="list content">
           <assessor-preview
             :key="assessor"
@@ -211,10 +212,11 @@ export default {
           proposals: []
         }
       },
+      isLoadingSearch: false,
       filteredAssessors: [],
       filteredAssessments: [],
       hasSearch: false,
-      searchStatus: false,
+      updateSearch: false,
       minSlice: 20,
       assessmentSlice: '',
       advancedFilters: false,
@@ -227,7 +229,14 @@ export default {
       dropdownProposals: [],
       selectedProposals: [],
       selectedAssessmentMin: undefined,
-      selectedAssessmentMax: undefined
+      selectedAssessmentMax: undefined,
+      filterSelection: {
+        selectedFund: {},
+        selectedChallenges: [],
+        selectedProposals: [],
+        selectedRange: [],
+        textSlice: ''
+      }
     }
   },
   computed: {
@@ -262,9 +271,6 @@ export default {
     canSearch() {
       return this.hasFund && (this.hasTextSlice || this.hasAdvancedFiltering) && !this.invalidRange
     },
-    searchCount() {
-      return this.filteredAssessors.lenght
-    },
     advancedFiltersMsg(){
       return (this.advancedFilters) ? 'Close advanced filtering' : 'Open advanced filtering'
     },
@@ -298,26 +304,22 @@ export default {
       }
       return []
     },
-    filterSelection() {
-      return {
-        selectedFund: this.selectedFund,
-        selectedChallenges: this.selectedChallenges,
-        selectedProposals: this.selectedProposals,
-        selectedRange: [this.selectedAssessmentMin, this.selectedAssessmentMax],
-        textSlice: (this.hasTextSlice) ? this.assessmentSlice : ''
-      }
-    }
   },
   methods: {
     getFilteredAssessments(assessorId) {
       return this.filteredAssessments.filter(ass => ass.idAssessor===assessorId)
     },
     setFilteredAssessors() {
+      this.hasSearch = true;
+      // const loadingComponent = this.$buefy.loading.open({
+      //   container: this.$refs.assessorIds
+      // })
+      this.isLoadingSearch = true;
+
       let filter = {
         ids: this.fundAssessors,
         assessments: this.fundAssessments
       }
-
       if(this.selectedChallenges.length > 0) { 
         filter = this.filterByChallenge(filter.ids, filter.assessments)
       }
@@ -332,8 +334,11 @@ export default {
       }    
       this.filteredAssessors = filter.ids;
       this.filteredAssessments = filter.assessments;
-      this.searchStatus = false;
-      this.hasSearch = true;
+      this.setFilterSelection();
+
+      this.updateSearch = false;
+      this.isLoadingSearch = false;
+      // loadingComponent.close()
     },
     filterByText(ids, assessments, text) {
         let textAssessments = assessments.filter( (ass) => {
@@ -404,6 +409,15 @@ export default {
           assessments: assessments.filter( ass => filteredIds.includes(ass.idAssessor) )
         }
     },
+    setFilterSelection() {
+      this.filterSelection = {
+        selectedFund: this.selectedFund,
+        selectedChallenges: this.selectedChallenges,
+        selectedProposals: this.selectedProposals,
+        selectedRange: [this.selectedAssessmentMin, this.selectedAssessmentMax],
+        textSlice: (this.hasTextSlice) ? this.assessmentSlice : ''
+      }
+    },
     updateFundFilters(){
       this.loadDropdownChallenges()    // populate Challenges filter
       this.loadDropdownProposals()     // populate Proposals filter
@@ -415,7 +429,7 @@ export default {
       this.updateSearchStatus()
     },
     updateSearchStatus() {
-      (this.hasSearch) ? this.searchStatus=true : this.searchStatus=false
+      (this.hasSearch) ? this.updateSearch=true : this.updateSearch=false
     },
     updateSelectedProposals() {
       this.selectedProposals = this.selectedProposals.filter( p => this.selectedChallenges.filter(ch=>ch.fundId===p.fundId).map(ch=>ch.id).includes(p.challengeId) )
@@ -504,6 +518,9 @@ export default {
 </script>
 
 <style lang="scss">
+.list-problems {
+  position: relative;
+}
 .flex-container {
   display: flex;
 }
