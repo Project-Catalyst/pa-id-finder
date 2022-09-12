@@ -114,7 +114,7 @@ export default {
       const data = {...templateData};
       data.id = assessment.idAssessment;
       data.proposal = assessment.proposalTitle;
-      data.challenge = '';
+      data.challenge = assessment.challengeTitle;
       data.url = assessment.proposalUrl;
       return data
     },

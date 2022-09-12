@@ -370,7 +370,7 @@ export default {
         let chHasAssessor = sChallenges.map( ch => ch.assessments.filter(ass => ass.idAssessor===assessorId).length > 0 )
         if( checker(chHasAssessor) ){   // verify if assessorId has assessments in all selected Challenges
           filteredIds.push(assessorId)
-          filteredAssessments = filteredAssessments.concat( sChallenges.map( ch => ch.assessments.filter(ass => ass.idAssessor===assessorId).flat() ))
+          filteredAssessments = filteredAssessments.concat( sChallenges.map( ch => ch.assessments.filter(ass => ass.idAssessor===assessorId) ).flat() )
         }
       })
       return {
@@ -385,13 +385,24 @@ export default {
         id: p.id,
         assessments: assessments.filter( (ass) => ass.proposalId===p.id )
       }))
+      let pChallenges = [...new Set( this.selectedProposals.map(p=>p.challengeId) )]
       let filteredIds = [];
       let filteredAssessments = [];
       ids.forEach( (assessorId) => {
         let pHasAssessor = sProposals.map( p => p.assessments.filter(ass => ass.idAssessor===assessorId).length > 0 )
         if( checker(pHasAssessor) ){    // verify if assessorId has assessments in all selected Proposals
           filteredIds.push(assessorId)
-          filteredAssessments = filteredAssessments.concat( sProposals.map( p => p.assessments.filter(ass => ass.idAssessor===assessorId).flat() ))
+          let assessorSelection = assessments.filter(ass => ass.idAssessor===assessorId);
+          if (this.selectedChallenges.length > 0 ) {
+            this.selectedChallenges.forEach( (ch) => {
+                ( pChallenges.includes(ch.id) )
+                ? filteredAssessments = filteredAssessments.concat( sProposals.map( p => p.assessments.filter(ass => ass.idAssessor===assessorId && ass.challengeId===ch.id).flat() ))
+                : filteredAssessments = filteredAssessments.concat( assessorSelection.filter( ass => ass.challengeId===ch.id ) )
+            })
+          } 
+          else {
+            filteredAssessments = filteredAssessments.concat( sProposals.map( p => p.assessments.filter(ass => ass.idAssessor===assessorId).flat() ))
+          }
         }
       })
       return {
