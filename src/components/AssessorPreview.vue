@@ -9,6 +9,7 @@
           </div>
           <div class="media-content">
             <h2 class="title">{{assessorId}}</h2>
+            <h4 class="subtitle"> {{totalNumberOfAssessments}} total assessments on {{fund.title}}</h4>
           </div>
         </div>
         <h4> {{assessments.length}} <em>assessments</em> identified for this search:</h4>
@@ -36,7 +37,7 @@
               <td></td>
               <td><a @click="goToProposal(item)">{{ item.proposal }}</a></td>
               <td><a @click="goToAssessment(item)">
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                 #{{item.id}}
               </a></td>
             </tr>
@@ -56,10 +57,16 @@ export default {
   props: ['assessorId', 'assessments', 'filterSelection'],
   data() {
     return {
-      filteredAssessments: []
     }
   },
   computed: {
+    fund() {
+      return this.filterSelection.selectedFund
+    },
+    totalNumberOfAssessments() {
+      let allAssessments = this.filterSelection.selectedFund.assessments.filter(ass=>ass.idAssessor===this.assessorId);
+      return allAssessments.length
+    },
     tableData() {
       const data =[];
       let template = {

@@ -109,7 +109,7 @@
               label="This filter is applied considering all Proposals in the selected Fund. Part of the assessments considered in this counting may not appear in the final search results." multilined>
               <b-icon icon="information" size="is-small"></b-icon>
             </b-tooltip>
-            <b-field label="Set the minimum and/or maximum numberof assessed Proposals (accross all challenges)" class="column is-7"
+            <b-field label="Set the minimum and/or maximum number of assessed Proposals (across all challenges)" class="column is-7"
             :type="{ 'is-danger': invalidRange }"
             :message="{ 'For a valid range selection, insert an ascending interval: maximum value should be greater than minimum.': invalidRange }"> 
               <b-numberinput @input="updateSearchStatus()" v-model="selectedAssessmentMin" type="is-primary is-light" size="is-small" controls-alignment="left" controls-position="compact" min="0"></b-numberinput>
