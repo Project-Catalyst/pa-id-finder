@@ -6,6 +6,9 @@
           <div class="title">{{$t('finder.TITLE')}}</div>
           <div class="subtitle" v-html="$t('finder.SUBTITLE')"></div>
         </div>
+        <div class="column is-12">
+          <div class="content" v-html="$t('finder.EXPLANATION')"></div>
+        </div>
       </div>
 
       <div class="filters">
@@ -103,10 +106,10 @@
           <!-- Number of Proposals Assessed Selection -->
           <div class="flex-container"> 
             <b-tooltip position="is-right" type="is-info is-light" class="info-icon"
-              label="This filter is applied individually to each selected Fund, considering the remaining filter configuration. It will be ignored for improper configuration." multilined>
+              label="This filter is applied considering all Proposals in the selected Fund. Part of the assessments considered in this counting may not appear in the final search results." multilined>
               <b-icon icon="information" size="is-small"></b-icon>
             </b-tooltip>
-            <b-field label="Select from an interval of assessed Proposals" class="column is-6"
+            <b-field label="Set the minimum and/or maximum numberof assessed Proposals (accross all challenges)" class="column is-7"
             :type="{ 'is-danger': invalidRange }"
             :message="{ 'For a valid range selection, insert an ascending interval: maximum value should be greater than minimum.': invalidRange }"> 
               <b-numberinput @input="updateSearchStatus()" v-model="selectedAssessmentMin" type="is-primary is-light" size="is-small" controls-alignment="left" controls-position="compact" min="0"></b-numberinput>
@@ -259,14 +262,15 @@ export default {
       return (this.selectedChallenges.length > 0) || (this.selectedProposals.length > 0) || (typeof(this.selectedAssessmentMin) === 'number') || (typeof(this.selectedAssessmentMax) === 'number')
     },
     hasNumberRange() {
-      return (typeof(this.selectedAssessmentMin) === "undefined" || typeof(this.selectedAssessmentMax) === "undefined" )
+      if (!this.invalidRange) {
+        return (typeof(this.selectedAssessmentMin) === "undefined" && typeof(this.selectedAssessmentMax) === "undefined" )
         ? false
-        : this.selectedAssessmentMin < this.selectedAssessmentMax
+        : true
+      }
+      return false
     },
     invalidRange() {
-      return (typeof(this.selectedAssessmentMin) === "undefined" && typeof(this.selectedAssessmentMax) !== "undefined" )
-          || (typeof(this.selectedAssessmentMin) !== "undefined" && typeof(this.selectedAssessmentMax) === "undefined" )
-          || this.selectedAssessmentMin >= this.selectedAssessmentMax
+      return (this.selectedAssessmentMin >= this.selectedAssessmentMax)
     },
     canSearch() {
       return this.hasFund && (this.hasTextSlice || this.hasAdvancedFiltering) && !this.invalidRange
@@ -396,18 +400,27 @@ export default {
         }
     },
     filterAssessorsByRange(ids, assessments) {
-        let freqIds = this.selectedFund.assessments.map( (ass) => ass.idAssessor )
-        let occurrences = freqIds.reduce(function (acc, curr) {
-          return acc[curr] ? ++acc[curr] : acc[curr] = 1, acc
-        }, {}); 
+      let freqIds = this.selectedFund.assessments.map( (ass) => ass.idAssessor )
+      let occurrences = freqIds.reduce(function (acc, curr) {
+        return acc[curr] ? ++acc[curr] : acc[curr] = 1, acc
+      }, {}); 
 
-        let filteredIds = ids.filter( (assessorId) => 
+      let filteredIds = [];
+      if( typeof(this.selectedAssessmentMax)==="undefined" ) {
+        filteredIds = ids.filter( (assessorId) => occurrences[assessorId] >= this.selectedAssessmentMin); 
+      }
+      else if( typeof(this.selectedAssessmentMin)==="undefined" ) {
+        filteredIds = ids.filter( (assessorId) => occurrences[assessorId] <= this.selectedAssessmentMax); 
+      }
+      else {
+        filteredIds = ids.filter( (assessorId) => 
           occurrences[assessorId] >= this.selectedAssessmentMin && occurrences[assessorId] <= this.selectedAssessmentMax
-        ); 
+        );
+      }
       return {
-          ids: filteredIds,
-          assessments: assessments.filter( ass => filteredIds.includes(ass.idAssessor) )
-        }
+        ids: filteredIds,
+        assessments: assessments.filter( ass => filteredIds.includes(ass.idAssessor) )
+      }
     },
     setFilterSelection() {
       this.filterSelection = {
