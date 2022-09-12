@@ -200,20 +200,20 @@ export default {
           challenges: [],
           proposals: []
         },
-        'f5': {
-          id: 'f5',
-          title: "Fund 5",
-          assessments: [],
-          challenges: [],
-          proposals: []
-        },
-        'f4': {
-          id: 'f4',
-          title: "Fund 4",
-          assessments: [],
-          challenges: [],
-          proposals: []
-        }
+        // 'f5': {
+        //   id: 'f5',
+        //   title: "Fund 5",
+        //   assessments: [],
+        //   challenges: [],
+        //   proposals: []
+        // },
+        // 'f4': {
+        //   id: 'f4',
+        //   title: "Fund 4",
+        //   assessments: [],
+        //   challenges: [],
+        //   proposals: []
+        // }
       },
       isLoadingSearch: false,
       filteredAssessors: [],
@@ -431,10 +431,29 @@ export default {
         textSlice: (this.hasTextSlice) ? this.assessmentSlice : ''
       }
     },
+    resetFilters() {
+      this.filteredAssessors = [];
+      this.filteredAssessments = [];
+      this.hasSearch = false;
+      this.updateSearch = false;
+      this.assessmentSlice = '';
+      this.selectedChallenges = [];
+      this.selectedProposals = [];
+      this.selectedAssessmentMin = undefined;
+      this.selectedAssessmentMax = undefined;
+      this.filterSelection = {
+        selectedFund: {},
+        selectedChallenges: [],
+        selectedProposals: [],
+        selectedRange: [],
+        textSlice: ''
+      }
+    },
     updateFundFilters(){
-      this.loadDropdownChallenges()    // populate Challenges filter
-      this.loadDropdownProposals()     // populate Proposals filter
-      this.updateSearchStatus()
+      this.loadDropdownChallenges();    // populate Challenges filter
+      this.loadDropdownProposals();     // populate Proposals filter
+      // this.updateSearchStatus();
+      this.resetFilters();
     },
     updateChallengeFilters(){
       this.updateSelectedProposals()
@@ -491,7 +510,7 @@ export default {
   mounted() {
     const loadingComponent = this.$buefy.loading.open({})
     this.fundsKeys.forEach((f) => {
-      CatalystAPI.assessments('f9').then((r) => { // change to <f>
+      CatalystAPI.assessments(f).then((r) => { // change to <f>
         // compute properties
         let assessments = r.data.map( (obj) => ({...obj, fundId:f}) )
         let challenges = assessments.map( (ass) => (
