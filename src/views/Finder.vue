@@ -170,7 +170,7 @@ export default {
   },
   data() {
     return {
-      fund: 'f9',
+      fund: 'f9', // remove
       funds: { 
         'f9': {
           id: 'f9',

@@ -2,16 +2,21 @@
   <div class="card mb-4">
     <div class="card-content">
       <div class="content">
+        
 
-        <div class="media">
-          <div class="media-left">
-              <b-icon icon="account-details" size="is-medium"></b-icon>
+        <router-link :to="{ name: 'assessor', params: {
+          assessor: assessorId,
+          }}">
+          <div class="media">
+            <div class="media-left">
+                <b-icon icon="account-details" size="is-medium"></b-icon>
+            </div>
+            <div class="media-content">
+              <h2 class="title">{{assessorId}}</h2>
+              <h4 class="subtitle"> {{totalNumberOfAssessments}} total assessments on {{fund.title}}</h4>
+            </div>
           </div>
-          <div class="media-content">
-            <h2 class="title">{{assessorId}}</h2>
-            <h4 class="subtitle"> {{totalNumberOfAssessments}} total assessments on {{fund.title}}</h4>
-          </div>
-        </div>
+        </router-link>
         <h4> {{assessments.length}} <em>assessments</em> identified for this search:</h4>
         <b-table
           :data="tableData"
@@ -50,7 +55,7 @@
 </template>
 
 <script>
-import AssessmentModal from '@/components/AssessmentModal.vue'
+import AssessmentFull from '@/components/AssessmentFull.vue'
 
 export default {
   name: 'AssessorPreview',
@@ -126,7 +131,7 @@ export default {
     },
     goToAssessment(item) {
       this.$buefy.modal.open({
-        component: AssessmentModal,
+        component: AssessmentFull,
         parent: this,
         props: {
           "assessment": this.assessments.filter(ass=>ass.idAssessment===item.id)[0],
