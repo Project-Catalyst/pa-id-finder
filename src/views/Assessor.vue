@@ -1,31 +1,92 @@
 <template>
-  <div class="container" v-if="assessorId">
-    <div class="hero mb-6">
-      <p class="title is-6 mb-2">
-          Insert something here
-      </p>
-      <p class="title is-3">
-        {{ assessorId }}
-      </p>
-      <p class="subtitle is-6">
-        Assessed Funds: {insert here the funds assessed}
-      </p>
-      <div class="box proposal-content">
-        <div class="columns">
-          <h1> Some information here </h1>
-        </div>
+  <div class="content" v-if="assessorId">
+    <b-message type="is-primary">
+      <em>The <b>Proposal Assessor ID</b> is independent for each Fund</em>, and may or may not represent the same person accross different Funds.
+      <br>For identification purposes, one should consider a specific Fund.
+    </b-message>
+
+    <div class="media">
+      <div class="media-left">
+          <b-icon icon="account-details" size="is-medium"></b-icon>
+      </div>
+      <div class="media-content">
+        <h1 class="title">{{assessorId}}</h1>
       </div>
     </div>
-    <section class="reviews-list">
-      <h1> Some information here </h1>
+
+    <section class="general-information">
+      <h3> Funds assessed: {{assessedFundsInText}}</h3>
+      <h3> Total assessments: {{totalAssessments}}</h3>
     </section>
+
+    <div class="box fund-assessments" :key="fund.id" v-for="fund in assessedFunds">
+      <h3> {{fund.title}} assessments</h3>
+      <p>There are {{fund.assessments.length}} assessments for this fund.</p>
+      <b-collapse
+          class="card assessment"
+          animation="slide"
+          v-for="(assessment, index) of fund.assessments"
+          :key="index"
+          :open="false">
+          <template #trigger="props">
+            <div class="card-header" role="button">
+              <p class="card-header-title">
+                ASSESSMENT #{{ assessment.idAssessment }}
+                <br>Challenge: {{assessment.challengeTitle.split(": ").pop()}}
+                <br>Proposal: {{assessment.proposalTitle}}
+              </p>
+              <a class="card-header-icon"><b-icon :icon="props.open ? 'menu-down' : 'menu-up'"></b-icon></a>
+            </div>
+          </template>
+          <div class="card-content">
+            <div class="content columns is-multiline">
+              <div class="column is-10">
+                <p><b>Auditability Note</b>
+                <br><small>{{ assessment.assessmentNoteAuditability }}</small></p>
+              </div>
+              <div class="column is-narrow">
+                <b-rate size="is-small" v-model="assessment.assessmentRatingAuditability" disabled />
+              </div>
+              <div class="column is-10">
+                <p><b>Feasibility Note</b>
+                <br><small>{{ assessment.assessmentNoteFeasibility }}</small></p>
+              </div>
+              <div class="column is-narrow">
+                <b-rate size="is-small" v-model="assessment.assessmentRatingFeasibility" disabled />
+              </div>
+              <div class="column is-10">
+                <p><b>Impact Note</b>
+                <br><small>{{ assessment.assessmentNoteImpact }}</small></p>
+              </div>
+              <div class="column is-narrow">
+                <b-rate size="is-small" v-model="assessment.assessmentRatingImpact" disabled />
+              </div>
+            </div>
+          </div>
+      </b-collapse>
+      <!-- <div class="list content" :key="assessment.idAssessment" v-for="assessment in fund.assessments">
+        <assessment-full
+          :assessment="assessment"    
+        />
+      </div> -->
+    </div>
+
+    <!-- <section class="other-list">
+      <a @click="openFunds">Console log Funds</a>
+    </section> -->
   </div>
 </template>
 
 <script>
-import CatalystAPI from '@/api/catalyst.js';
+// @ is an alias to /src
 import AssessmentFull from '@/components/AssessmentFull';
+import CatalystAPI from '@/api/catalyst.js';
+
 export default {
+  name: 'Assessor',
+  components: {
+    AssessmentFull,
+  },
   data() {
     return {
       funds: { 
@@ -34,48 +95,51 @@ export default {
           title: "Fund 9",
           assessments: [],
           challenges: [],
-          proposals: []
+          proposals: [],
+          isAssessed: false
         },
         'f8': {
           id: 'f8',
           title: "Fund 8",
           assessments: [],
           challenges: [],
-          proposals: []
+          proposals: [],
+          isAssessed: false
         },
         'f7': {
           id: 'f7',
           title: "Fund 7",
           assessments: [],
           challenges: [],
-          proposals: []
+          proposals: [],
+          isAssessed: false
         },
         'f6': {
           id: 'f6',
           title: "Fund 6",
           assessments: [],
           challenges: [],
-          proposals: []
+          proposals: [],
+          isAssessed: false
         },
         // 'f5': {
         //   id: 'f5',
         //   title: "Fund 5",
         //   assessments: [],
         //   challenges: [],
-        //   proposals: []
+        //   proposals: [],
+        //   isAssessed: false
         // },
         // 'f4': {
         //   id: 'f4',
         //   title: "Fund 4",
         //   assessments: [],
         //   challenges: [],
-        //   proposals: []
+        //   proposals: [],
+        //   isAssessed: false
         // }
       },
     }
-  },
-  components: {
-    AssessmentFull,
   },
   computed: {
     assessorId() {
@@ -84,71 +148,82 @@ export default {
       }
       return false
     },
+    assessedFunds() {
+      return this.fundsKeys.map(fId=>this.funds[fId]).filter( (f) => f.isAssessed===true )
+    },
+    assessedFundsInText() {
+      return this.assessedFunds.map(f=>f.title).join(', ')
+    },
+    totalAssessments() {
+      return this.assessedFunds.map(f=>f.assessments.length).reduce((partialSum, a) => partialSum + a, 0)
+    },
     fundsKeys() {
       return Object.keys(this.funds)
     },
   },
   methods: {
   },
-  mounted(){  // same as Finder.vue
+  mounted(){  // same as Finder.vue but loads only Assessor's assessments
     const loadingComponent = this.$buefy.loading.open({})
     this.fundsKeys.forEach((f) => {
-      CatalystAPI.assessments(f).then((r) => { // change to <f>
+      CatalystAPI.assessments(f).then((r) => {
         // compute properties
-        let assessments = r.data.map( (obj) => ({...obj, fundId:f}) )
-        let challenges = assessments.map( (ass) => (
+        let assessments = r.data.filter( (ass) => ass.idAssessor===this.assessorId)
+        if(assessments.length > 0) {
+          let challenges = assessments.map( (ass) => (
             {
               id: ass.challengeId , 
               title: ass.challengeTitle,
               fundId: f
             }
           ))
-        let proposals = assessments.map( (ass) => (
-            {
-              id: ass.proposalId , 
-              title: ass.proposalTitle,
-              url: ass.proposalUrl,
-              challengeId: ass.challengeId,
-              fundId: f
-            }
-          ))
-        // populate this.funds properties
-        this.funds[f].assessments = assessments
-        this.funds[f].challenges = challenges.filter((value, index, self) =>
-          index === self.findIndex((t) => (
-            t.id === value.id && t.title === value.title
-          ))
-        )
-        this.funds[f].proposals = proposals.filter((value, index, self) =>
-          index === self.findIndex((t) => (
-            t.id === value.id && t.title === value.title && t.url === value.url && t.challengeId === value.challengeId
-          ))
-        )
+          let proposals = assessments.map( (ass) => (
+              {
+                id: ass.proposalId , 
+                title: ass.proposalTitle,
+                url: ass.proposalUrl,
+                challengeId: ass.challengeId,
+                fundId: f
+              }
+            ))
+          // populate this.funds properties
+          this.funds[f].isAssessed = true;
+          this.funds[f].assessments = assessments.map( (obj) => ({...obj, fundId:f}) );
+          this.funds[f].challenges = challenges.filter((value, index, self) =>
+            index === self.findIndex((t) => (
+              t.id === value.id && t.title === value.title
+            ))
+          )
+          this.funds[f].proposals = proposals.filter((value, index, self) =>
+            index === self.findIndex((t) => (
+              t.id === value.id && t.title === value.title && t.url === value.url && t.challengeId === value.challengeId
+            ))
+          )
+        }
       })
     })
     loadingComponent.close()
     // this.funds = {...this.funds}
-  },
+  }
 }
 </script>
 <style lang="scss">
-  @import 'bulma/sass/utilities/mixins';
-  .proposal-content {
-    @include desktop {
-      position: relative;
-    }
-    p {
-      white-space: pre-line;
-    }
+.general-information {
+  h3{
+    margin-top: 0.5em !important;
+    margin-bottom: 0.5rem !important;
   }
-  .my-progress {
-    max-width: 450px;
+}
+.fund-assessments {
+  margin-top: 1.5em !important;
+}
+.assessment {
+  .column {
+    padding-bottom: 0rem;
   }
-  .notices .notification {
-    pointer-events: initial;
-  }
-  .inline {
-    display: flex;
-    justify-content: space-between;
-  }
+}
+.inline {
+  display: flex;
+  justify-content: space-between;
+}
 </style>

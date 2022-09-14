@@ -521,7 +521,7 @@ export default {
   mounted() {
     const loadingComponent = this.$buefy.loading.open({})
     this.fundsKeys.forEach((f) => {
-      CatalystAPI.assessments(f).then((r) => { // change to <f>
+      CatalystAPI.assessments(f).then((r) => {
         // compute properties
         let assessments = r.data.map( (obj) => ({...obj, fundId:f}) )
         let challenges = assessments.map( (ass) => (
