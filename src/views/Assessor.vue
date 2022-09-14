@@ -18,68 +18,63 @@
       <h3> Funds assessed: {{assessedFundsInText}}</h3>
       <h3> Total assessments: {{totalAssessments}}</h3>
     </section>
+          
 
-    <div class="box fund-assessments" :key="fund.id" v-for="fund in assessedFunds">
-      <h3> {{fund.title}} assessments</h3>
-      <p>There are {{fund.assessments.length}} assessments for this fund.</p>
-      <b-collapse
-          class="card assessment"
-          animation="slide"
-          v-for="(assessment, index) of fund.assessments"
-          :key="index"
-          :open="false">
-          <template #trigger="props">
-            <div class="card-header" role="button">
-              <p class="card-header-title">
-                ASSESSMENT #{{ assessment.idAssessment }}
-                <br>Challenge: {{assessment.challengeTitle.split(": ").pop()}}
-                <br>Proposal: {{assessment.proposalTitle}}
-              </p>
-              <a class="card-header-icon"><b-icon :icon="props.open ? 'menu-up' : 'menu-down'"></b-icon></a>
-            </div>
-          </template>
-          <div class="card-content">
-            <div class="content columns is-multiline">
-              <div class="column is-10">
+    <div class="box fund-assessments" :key="fund.id" 
+      v-for="fund in assessedFunds">
+        <h3> {{fund.title}} assessments</h3>
+        <p>There are {{fund.assessments.length}} assessments for this fund.</p>
+
+        <b-table
+          :data="fund.assessments"
+          ref="table"
+          hoverable
+          detailed
+          custom-detail-row
+          detail-key="idAssessment"
+          @details-open="(row, index) => $buefy.toast.open(`Expanded Assessment #${row.idAssessment}`)"
+          :show-detail-icon="true">
+          
+          <b-table-column field="assessment" v-slot="props">
+            <b>Assessment #{{ props.row.idAssessment }}</b>
+          </b-table-column>
+
+          <b-table-column field="challenge" v-slot="props">
+            <b>Challenge:</b> {{ props.row.challengeTitle.split(": ").pop() }}
+          </b-table-column>
+
+          <b-table-column field="proposal" v-slot="props">
+            <b>Proposal:</b> {{ props.row.proposalTitle }}
+          </b-table-column>
+
+          <template slot="detail" slot-scope="props">
+            <tr>
+              <td></td>
+              <td>
+                <b-rate size="is-small" v-model="props.row.assessmentRatingAuditability" disabled />
                 <p><b>Auditability Note</b>
-                <br><small>{{ assessment.assessmentNoteAuditability }}</small></p>
-              </div>
-              <div class="column is-narrow">
-                <b-rate size="is-small" v-model="assessment.assessmentRatingAuditability" disabled />
-              </div>
-              <div class="column is-10">
+                <br><small>{{ props.row.assessmentNoteAuditability }}</small></p>
+              </td>
+              <td>
+                <b-rate size="is-small" v-model="props.row.assessmentRatingFeasibility" disabled />
                 <p><b>Feasibility Note</b>
-                <br><small>{{ assessment.assessmentNoteFeasibility }}</small></p>
-              </div>
-              <div class="column is-narrow">
-                <b-rate size="is-small" v-model="assessment.assessmentRatingFeasibility" disabled />
-              </div>
-              <div class="column is-10">
+                <br><small>{{ props.row.assessmentNoteFeasibility }}</small></p>
+              </td>
+              <td>
+                <b-rate size="is-small" v-model="props.row.assessmentRatingImpact" disabled />
                 <p><b>Impact Note</b>
-                <br><small>{{ assessment.assessmentNoteImpact }}</small></p>
-              </div>
-              <div class="column is-narrow">
-                <b-rate size="is-small" v-model="assessment.assessmentRatingImpact" disabled />
-              </div>
-            </div>
-          </div>
-      </b-collapse>
-      <!-- <div class="list content" :key="assessment.idAssessment" v-for="assessment in fund.assessments">
-        <assessment-full
-          :assessment="assessment"    
-        />
-      </div> -->
+                <br><small>{{ props.row.assessmentNoteImpact }}</small></p>
+              </td>
+            </tr>
+          </template>
+        </b-table>
     </div>
-
-    <!-- <section class="other-list">
-      <a @click="openFunds">Console log Funds</a>
-    </section> -->
   </div>
 </template>
 
 <script>
 // @ is an alias to /src
-import AssessmentFull from '@/components/AssessmentFull';
+import AssessmentFull from '@/components/AssessmentFull.vue';
 import CatalystAPI from '@/api/catalyst.js';
 
 export default {
@@ -89,6 +84,7 @@ export default {
   },
   data() {
     return {
+      isOpen: 0,
       funds: { 
         'f9': {
           id: 'f9',
