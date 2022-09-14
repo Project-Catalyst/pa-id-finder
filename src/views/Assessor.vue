@@ -1,6 +1,6 @@
 <template>
   <div class="content" v-if="assessorId">
-    <b-message type="is-primary">
+    <b-message type="is-warning" has-icon>
       <em>The <b>Proposal Assessor ID</b> is independent for each Fund</em>, and may or may not represent the same person accross different Funds.
       <br>For identification purposes, one should consider a specific Fund.
     </b-message>
@@ -35,7 +35,7 @@
                 <br>Challenge: {{assessment.challengeTitle.split(": ").pop()}}
                 <br>Proposal: {{assessment.proposalTitle}}
               </p>
-              <a class="card-header-icon"><b-icon :icon="props.open ? 'menu-down' : 'menu-up'"></b-icon></a>
+              <a class="card-header-icon"><b-icon :icon="props.open ? 'menu-up' : 'menu-down'"></b-icon></a>
             </div>
           </template>
           <div class="card-content">
@@ -94,48 +94,36 @@ export default {
           id: 'f9',
           title: "Fund 9",
           assessments: [],
-          challenges: [],
-          proposals: [],
           isAssessed: false
         },
         'f8': {
           id: 'f8',
           title: "Fund 8",
           assessments: [],
-          challenges: [],
-          proposals: [],
           isAssessed: false
         },
         'f7': {
           id: 'f7',
           title: "Fund 7",
           assessments: [],
-          challenges: [],
-          proposals: [],
           isAssessed: false
         },
         'f6': {
           id: 'f6',
           title: "Fund 6",
           assessments: [],
-          challenges: [],
-          proposals: [],
           isAssessed: false
         },
         // 'f5': {
         //   id: 'f5',
         //   title: "Fund 5",
         //   assessments: [],
-        //   challenges: [],
-        //   proposals: [],
         //   isAssessed: false
         // },
         // 'f4': {
         //   id: 'f4',
         //   title: "Fund 4",
         //   assessments: [],
-        //   challenges: [],
-        //   proposals: [],
         //   isAssessed: false
         // }
       },
@@ -170,40 +158,13 @@ export default {
         // compute properties
         let assessments = r.data.filter( (ass) => ass.idAssessor===this.assessorId)
         if(assessments.length > 0) {
-          let challenges = assessments.map( (ass) => (
-            {
-              id: ass.challengeId , 
-              title: ass.challengeTitle,
-              fundId: f
-            }
-          ))
-          let proposals = assessments.map( (ass) => (
-              {
-                id: ass.proposalId , 
-                title: ass.proposalTitle,
-                url: ass.proposalUrl,
-                challengeId: ass.challengeId,
-                fundId: f
-              }
-            ))
           // populate this.funds properties
           this.funds[f].isAssessed = true;
           this.funds[f].assessments = assessments.map( (obj) => ({...obj, fundId:f}) );
-          this.funds[f].challenges = challenges.filter((value, index, self) =>
-            index === self.findIndex((t) => (
-              t.id === value.id && t.title === value.title
-            ))
-          )
-          this.funds[f].proposals = proposals.filter((value, index, self) =>
-            index === self.findIndex((t) => (
-              t.id === value.id && t.title === value.title && t.url === value.url && t.challengeId === value.challengeId
-            ))
-          )
         }
       })
     })
     loadingComponent.close()
-    // this.funds = {...this.funds}
   }
 }
 </script>

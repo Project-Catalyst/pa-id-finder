@@ -555,7 +555,6 @@ export default {
       })
     })
     loadingComponent.close()
-    // this.funds = {...this.funds}
   }
 }
 </script>

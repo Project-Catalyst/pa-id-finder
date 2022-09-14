@@ -8,12 +8,12 @@
           assessor: assessorId,
           }}">
           <div class="media">
-            <div class="media-left">
+            <div class="media-left assessor-link">
                 <b-icon icon="account-details" size="is-medium"></b-icon>
             </div>
-            <div class="media-content">
-              <h2 class="title">{{assessorId}}</h2>
-              <h4 class="subtitle"> {{totalNumberOfAssessments}} total assessments on {{fund.title}}</h4>
+            <div class="media-content assessor-link">
+              <h2 class="title assessor-link">{{assessorId}}</h2>
+              <h4 class="subtitle assessor-link"> {{totalNumberOfAssessments}} total assessments on {{fund.title}}</h4>
             </div>
           </div>
         </router-link>
@@ -32,19 +32,19 @@
             <b>{{ props.row.proposal }}</b>
           </b-table-column>
 
-          <b-table-column field="id" label="Assessment ID" v-slot="props">
-            <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-              {{ props.row.id }}<b-icon icon="email-open-outline"></b-icon></b>
+          <b-table-column field="id" label="Assessment ID (click to open full assessment)" cellClass="has-text-center" v-slot="props">
+            <!-- &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -->
+              {{ props.row.id }}
+            <!-- <b-icon icon="email-open-outline"></b-icon> -->
           </b-table-column>
 
           <template slot="detail" slot-scope="props">
             <tr v-for="item in props.row.items" :key="item.id">
               <td></td>
               <td><a @click="goToProposal(item)">{{ item.proposal }}</a></td>
-              <td><a @click="goToAssessment(item)">
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                #{{item.id}}
-              </a></td>
+              <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                <a @click="goToAssessment(item)">#{{item.id}}</a>
+              </td>
             </tr>
           </template>
         </b-table>
@@ -150,19 +150,31 @@ export default {
 
 
 <style lang="scss">
-  .assessor-preview {
-    padding: 10px 20px;
-    width: 100%;
-    &:nth-child(2n + 1) {
-      background: #f1f1f1;
-      progress::-webkit-progress-bar {
-        background-color: #fff !important;
-      }
-      progress::-moz-progress-bar {
-        background-color: #fff !important;
-      }
+.assessor-link {
+  color: rgb(12, 12, 136) !important;
+}
+.assessor-link:hover {
+  text-decoration: underline;
+}
+a {
+  color: rgb(12, 12, 136) !important;
+}
+a:hover {
+  text-decoration: underline;
+}
+.assessor-preview {
+  padding: 10px 20px;
+  width: 100%;
+  &:nth-child(2n + 1) {
+    background: #f1f1f1;
+    progress::-webkit-progress-bar {
+      background-color: #fff !important;
     }
-    &:nth-child(2n) {
+    progress::-moz-progress-bar {
+      background-color: #fff !important;
     }
   }
+  &:nth-child(2n) {
+  }
+}
 </style>
