@@ -127,21 +127,21 @@
           <b-button 
             type="is-primary is-large"
             :disabled="!canSearch"
-            @click="setFilteredAssessors()">
+            @click="search()">
             Search ID &nbsp; <b-icon v-if="updateSearch" icon="update" size="is-small"></b-icon>
           </b-button>
         </b-tooltip>
       </div>
     </section>
 
-    <section ref="assessorIds" class="box list-problems" v-if="hasSearch">
-      <!-- <b-loading :is-full-page="false" v-model="isLoadingSearch"></b-loading> -->
-      <!-- <div class="title">Searched PA-IDs</div> -->
+    <section v-if="activeLoading" class="column is-half is-offset-one-quarter"><b-progress size="is-small" type="is-primary"></b-progress></section>
+
+    <section class="box list-problems" v-if="hasSearch">
       <div class="subtitle" v-if="filteredAssessors.length === 0">
         There is no PA-ID identified for this search configuration.
       </div>
       <div v-else>
-        <p><small>There are #{{filteredAssessors.length}} assessors identified for this search</small></p>
+        <p class="search-result-info"><small>There are {{filteredAssessors.length}} assessors identified for this search</small></p>
         <div class="list content">
           <assessor-preview
             :key="assessor"
@@ -274,6 +274,9 @@ export default {
     canSearch() {
       return this.hasFund && (this.hasTextSlice || this.hasAdvancedFiltering) && !this.invalidRange
     },
+    activeLoading() {
+      return this.isLoadingSearch
+    },
     advancedFiltersMsg(){
       return (this.advancedFilters) ? 'Close advanced filtering' : 'Open advanced filtering'
     },
@@ -313,13 +316,15 @@ export default {
     getFilteredAssessments(assessorId) {
       return this.filteredAssessments.filter(ass => ass.idAssessor===assessorId)
     },
-    setFilteredAssessors() {
-      this.hasSearch = true;
-      // const loadingComponent = this.$buefy.loading.open({
-      //   container: this.$refs.assessorIds
-      // })
+    search() {
       this.isLoadingSearch = true;
-
+      console.log('search', this.isLoadingSearch)
+      this.setFilteredAssessors()
+      this.setFilterSelection();
+      this.hasSearch = true;
+      this.updateSearch = false;
+    },
+    setFilteredAssessors() {
       let filter = {
         ids: this.fundAssessors,
         assessments: this.fundAssessments
@@ -338,11 +343,6 @@ export default {
       }    
       this.filteredAssessors = filter.ids;
       this.filteredAssessments = filter.assessments;
-      this.setFilterSelection();
-
-      this.updateSearch = false;
-      this.isLoadingSearch = false;
-      // loadingComponent.close()
     },
     filterByText(ids, assessments, text) {
         let textAssessments = assessments.filter( (ass) => {
@@ -518,6 +518,13 @@ export default {
       if(field === 'assessmentText'){ this.assessmentSlice = val }
     }
   },
+  updated() {
+    console.log('updated begin', this.isLoadingSearch)
+    if (this.isLoadingSearch && this.hasSearch) {
+      this.isLoadingSearch = false;
+    }
+    console.log('updated end', this.isLoadingSearch)
+  },
   mounted() {
     const loadingComponent = this.$buefy.loading.open({})
     this.fundsKeys.forEach((f) => {
@@ -569,17 +576,12 @@ export default {
 .info-icon {
   padding-top: 0.75rem;
 }
+.search-result-info {
+  margin-bottom: 1em;
+}
 .tags {
   .tag:not(.is-light) {
     cursor: pointer;
-  }
-}
-.results {
-  .tag {
-    height: auto;
-    white-space: initial !important;
-    padding-top: 0.75em;
-    padding-bottom: 0.75em;
   }
 }
 .autocomplete {

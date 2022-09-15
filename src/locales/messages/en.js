@@ -21,7 +21,7 @@ export default {
                   <br><br><b>How the search works:</b><ul>\
                   <li>If a slice of an assessment text is provided, this tool will find the IDs that have submitted assessments containing the <b>exact</b> query text provided for the search.\
                   <br><b>Be careful! Any mismatching spelling between the assessment and the query text will return no results.</b> \
-                  <li>If the advanced filtering is used, we'll provide the IDs that have submitted assessments to at least all conditions selected for the search. \
+                  <li>If the advanced filtering is used, we will provide all IDs that match the conditions of your search. \
                   </ul> \
                   In the results, the tool provides the PA-IDs found for the search, and the assessments matching the search criteria.\
                   <br>For each PA-ID provided, one can have access to the assessments themselves, as well as to the Proposal's URL and Assessor's information page.",
