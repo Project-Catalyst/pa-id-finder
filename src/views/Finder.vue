@@ -318,7 +318,6 @@ export default {
     },
     search() {
       this.isLoadingSearch = true;
-      console.log('search', this.isLoadingSearch)
       this.setFilteredAssessors()
       this.setFilterSelection();
       this.hasSearch = true;
@@ -519,11 +518,9 @@ export default {
     }
   },
   updated() {
-    console.log('updated begin', this.isLoadingSearch)
     if (this.isLoadingSearch && this.hasSearch) {
       this.isLoadingSearch = false;
     }
-    console.log('updated end', this.isLoadingSearch)
   },
   mounted() {
     const loadingComponent = this.$buefy.loading.open({})
