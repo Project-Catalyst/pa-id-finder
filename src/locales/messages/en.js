@@ -11,23 +11,19 @@ export default {
                   If you have not done so, it might still be possible to find your ID.",
     MADE_BY: "Made by Catalyst Community for the Catalyst Community",
     DONATE: "If you want to support the development of the voter tool you can donate some ADA to:",
+    RAW_DATA: "Raw data",
   },
   finder: {
     TITLE: "Search for your PA-ID",
     SUBTITLE: "Use a slice of your assessment text to find your ID, or use our advanced filtering.",
-    EXPLANATION: "<em>The <b>Proposal Assessor ID</b> is independent for each Fund.</em> \
-                  In other words, a specific ID may or may not represent the same person in two different Funds. \
-                  <br>With this PA-ID Finder, you can search for ID's considering a given Fund: \
-                  <br>- If a slice of an assessment text is provided, we'll provide the PA-IDs that have submitted assessments containing the exact text of the search; \
-                  <br>- If the advanced search is used, we'll provide the PA-IDs that have submitted assessments to at least all conditions selected for the search. \
-                  <br>At the search results, one can have access to the assessments themselves, as well as to the Proposal's url and Assessor's information",
-  },
-  // problem: {
-  //   DESCRIPTION: "What problem do you see?*",
-  //   IMPORTANCE: "Why is solving this problem important to the mission of Project Catalyst?*",
-  //   GAP: "Can you articulate the gap between the current state of the problem and the expected or envisioned state?",
-  //   VALUE: "How might the value of solving this problem be quantified and/or measured?",
-  //   TAGS: "Choose your problem Tags:",
-  //   ATTACHMENTS: "Attachments/Links:"
-  // }
+    EXPLANATION: "<em>The <b>Proposal Assessor ID</b> is anonymous and may or may not represent the same person in two different Funds.</em> \
+                  <br>With this PA-ID Finder, you can now use the texts from assessments you've done and other advanced filtering to find out your PA-ID on specific Funds you have assessed.\
+                  <br><br><b>How the search works:</b><ul>\
+                  <li>If a slice of an assessment text is provided, this tool will find the IDs that have submitted assessments containing the <b>exact</b> query text provided for the search.\
+                  <br><b>Be careful! Any mismatching spelling between the assessment and the query text will return no results.</b> \
+                  <li>If the advanced filtering is used, we'll provide the IDs that have submitted assessments to at least all conditions selected for the search. \
+                  </ul> \
+                  In the results, the tool provides the PA-IDs found for the search, and the assessments matching the search criteria.\
+                  <br>For each PA-ID provided, one can have access to the assessments themselves, as well as to the Proposal's URL and Assessor's information page.",
+  }
 }

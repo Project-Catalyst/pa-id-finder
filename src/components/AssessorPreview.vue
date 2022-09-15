@@ -25,7 +25,6 @@
           hoverable
           custom-detail-row
           detail-key="proposal"
-          @details-open="(row, index) => $buefy.toast.open(`Expanded ${row.proposal}`)"
           :show-detail-icon="true">
           
           <b-table-column field="proposal" label="Assessed Proposal" v-slot="props">
@@ -157,7 +156,7 @@ export default {
   text-decoration: underline;
 }
 a {
-  color: rgb(12, 12, 136) !important;
+  color: rgb(12, 12, 136);
 }
 a:hover {
   text-decoration: underline;

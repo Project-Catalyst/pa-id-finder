@@ -123,7 +123,7 @@
 
       <div class="buttons is-flex is-justify-content-center">
         <b-tooltip :active="!canSearch" position="is-top" type="is-danger is-light"
-          label="Insert an assessment text or select advanced filtering">
+          label="Insert an assessment text longer than 20 characters or select advanced filtering">
           <b-button 
             type="is-primary is-large"
             :disabled="!canSearch"
@@ -170,7 +170,6 @@ export default {
   },
   data() {
     return {
-      fund: 'f9', // remove
       funds: { 
         'f9': {
           id: 'f9',
@@ -286,7 +285,8 @@ export default {
         return this.assessmentSlice;
       },
       set: debounce(function(val) {
-        this.setValue('assessmentText', val)
+        let text = val.trim()
+        this.setValue('assessmentText', text)
       }, 500)
     },
     fundChallenges(){
@@ -605,6 +605,10 @@ export default {
     vertical-align: middle;
     display: inline-block;
   }
+}
+ul {
+  margin-top: 0.1em !important;
+  margin-bottom: 1em !important;
 }
 </style>
 
