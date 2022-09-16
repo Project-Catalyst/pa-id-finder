@@ -109,11 +109,15 @@
               label="This filter is applied considering all Proposals in the selected Fund. Part of the assessments considered in this counting may not appear in the final search results." multilined>
               <b-icon icon="information" size="is-small"></b-icon>
             </b-tooltip>
-            <b-field label="Set the minimum and/or maximum number of assessed Proposals (across all challenges)" class="column is-7"
-            :type="{ 'is-danger': invalidRange }"
-            :message="{ 'For a valid range selection, insert an ascending interval: maximum value should be greater than minimum.': invalidRange }"> 
-              <b-numberinput @input="updateSearchStatus()" v-model="selectedAssessmentMin" type="is-primary is-light" size="is-small" controls-alignment="left" controls-position="compact" min="0"></b-numberinput>
-              <b-numberinput @input="updateSearchStatus()" v-model="selectedAssessmentMax" type="is-primary is-light" size="is-small" controls-alignment="right" controls-position="compact" min="0"></b-numberinput>
+            <b-field label="Set the minimum and/or maximum number of assessed Proposals (across all challenges)" class="column is-7"> 
+              <b-numberinput type="is-primary is-light" size="is-small" :controls="false" :min="null"
+                @input="updateSearchStatus()" 
+                v-model="selectedAssessmentMin">
+              </b-numberinput>
+              <b-numberinput type="is-primary is-light" size="is-small" :controls="false" :min="null"
+                @input="updateSearchStatus()" 
+                v-model="selectedAssessmentMax">
+              </b-numberinput>
               <b-button @click="clearNumberFilter()" type="is-ghost" size="is-small">Clear filter</b-button>
             </b-field>
           </div>
@@ -122,14 +126,17 @@
       </div>
 
       <div class="buttons is-flex is-justify-content-center">
-        <b-tooltip :active="!canSearch" position="is-top" type="is-danger is-light"
+        <b-tooltip :active="!canSearch&&!invalidRange" position="is-top" type="is-danger is-light"
           label="Insert an assessment text longer than 20 characters or select advanced filtering">
+        <b-tooltip :active="invalidRange" position="is-top" type="is-danger is-light"
+          label="Invalid Range Filter: maximum value should be greater than minimum">
           <b-button 
             type="is-primary is-large"
             :disabled="!canSearch"
             @click="search()">
             Search ID &nbsp; <b-icon v-if="updateSearch" icon="update" size="is-small"></b-icon>
           </b-button>
+        </b-tooltip>
         </b-tooltip>
       </div>
     </section>
@@ -246,8 +253,8 @@ export default {
       selectedChallenges: [],
       dropdownProposals: [],
       selectedProposals: [],
-      selectedAssessmentMin: undefined,
-      selectedAssessmentMax: undefined,
+      selectedAssessmentMin: null,
+      selectedAssessmentMax: null,
       filterSelection: {
         selectedFund: {},
         selectedChallenges: [],
@@ -277,15 +284,13 @@ export default {
       return (this.selectedChallenges.length > 0) || (this.selectedProposals.length > 0) || (typeof(this.selectedAssessmentMin) === 'number') || (typeof(this.selectedAssessmentMax) === 'number')
     },
     hasNumberRange() {
-      if (!this.invalidRange) {
-        return (typeof(this.selectedAssessmentMin) === "undefined" && typeof(this.selectedAssessmentMax) === "undefined" )
-        ? false
-        : true
-      }
-      return false
+      return (typeof(this.selectedAssessmentMin) === "number" || typeof(this.selectedAssessmentMax) === "number" )
     },
     invalidRange() {
-      return (this.selectedAssessmentMin >= this.selectedAssessmentMax)
+      if(typeof(this.selectedAssessmentMin) === "number" && typeof(this.selectedAssessmentMax) === "number" ) {
+        return (this.selectedAssessmentMin >= this.selectedAssessmentMax)
+      }
+      return false
     },
     canSearch() {
       return this.hasFund && (this.hasTextSlice || this.hasAdvancedFiltering) && !this.invalidRange
@@ -432,10 +437,10 @@ export default {
       }, {}); 
 
       let filteredIds = [];
-      if( typeof(this.selectedAssessmentMax)==="undefined" ) {
+      if( typeof(this.selectedAssessmentMax)!=="number" ) {
         filteredIds = ids.filter( (assessorId) => occurrences[assessorId] >= this.selectedAssessmentMin); 
       }
-      else if( typeof(this.selectedAssessmentMin)==="undefined" ) {
+      else if( typeof(this.selectedAssessmentMin)!=="number" ) {
         filteredIds = ids.filter( (assessorId) => occurrences[assessorId] <= this.selectedAssessmentMax); 
       }
       else {
@@ -465,8 +470,8 @@ export default {
       this.assessmentSlice = '';
       this.selectedChallenges = [];
       this.selectedProposals = [];
-      this.selectedAssessmentMin = undefined;
-      this.selectedAssessmentMax = undefined;
+      this.selectedAssessmentMin = null;
+      this.selectedAssessmentMax = null;
       this.filterSelection = {
         selectedFund: {},
         selectedChallenges: [],
@@ -525,8 +530,8 @@ export default {
       })
     },
     clearNumberFilter() {
-      this.selectedAssessmentMin = undefined;
-      this.selectedAssessmentMax = undefined;
+      this.selectedAssessmentMin = null;
+      this.selectedAssessmentMax = null;
       this.updateSearchStatus()
     },
     changePage() {
