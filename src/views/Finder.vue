@@ -134,23 +134,37 @@
       </div>
     </section>
 
-    <section v-if="activeLoading" class="column is-half is-offset-one-quarter"><b-progress size="is-small" type="is-primary"></b-progress></section>
-
-    <section class="box list-problems" v-if="hasSearch">
+    <section id="list-assessors" class="box list-assessors" v-if="hasSearch">
       <div class="subtitle" v-if="filteredAssessors.length === 0">
         There is no PA-ID identified for this search configuration.
       </div>
       <div v-else>
         <p class="search-result-info"><small>There are {{filteredAssessors.length}} assessors identified for this search</small></p>
         <div class="list content">
+          <b-pagination
+            :total="filteredAssessors.length"
+            :current.sync="currentPage"
+            :per-page="resultsPerPage"
+            :range-after="2"
+            @change="changePage()"
+          >
+          </b-pagination>
           <assessor-preview
             :key="assessor"
-            v-for="assessor in filteredAssessors"
+            v-for="assessor in paginatedAssessors"
             :funds="funds"
             :assessorId="assessor"
             :assessments="getFilteredAssessments(assessor)"
             :filterSelection="filterSelection"        
           />
+          <b-pagination
+            :total="filteredAssessors.length"
+            :current.sync="currentPage"
+            :per-page="resultsPerPage"
+            :range-after="2"
+            @change="changePage()"
+          >
+          </b-pagination>
         </div>
       </div>
     </section>
@@ -162,6 +176,7 @@
 import AssessorPreview from '@/components/AssessorPreview.vue'
 import CatalystAPI from '@/api/catalyst.js';
 import debounce from 'lodash.debounce';
+import $ from "jquery";
 
 export default {
   name: 'Finder',
@@ -214,7 +229,8 @@ export default {
         //   proposals: []
         // }
       },
-      isLoadingSearch: false,
+      currentPage: 1,
+      resultsPerPage: 7,
       filteredAssessors: [],
       filteredAssessments: [],
       hasSearch: false,
@@ -274,9 +290,6 @@ export default {
     canSearch() {
       return this.hasFund && (this.hasTextSlice || this.hasAdvancedFiltering) && !this.invalidRange
     },
-    activeLoading() {
-      return this.isLoadingSearch
-    },
     advancedFiltersMsg(){
       return (this.advancedFilters) ? 'Close advanced filtering' : 'Open advanced filtering'
     },
@@ -311,13 +324,16 @@ export default {
       }
       return []
     },
+    paginatedAssessors() {
+      let page_number = this.currentPage-1
+      return this.filteredAssessors.slice(page_number * this.resultsPerPage, (page_number + 1) * this.resultsPerPage);      
+    }
   },
   methods: {
     getFilteredAssessments(assessorId) {
       return this.filteredAssessments.filter(ass => ass.idAssessor===assessorId)
     },
     search() {
-      this.isLoadingSearch = true;
       this.setFilteredAssessors()
       this.setFilterSelection();
       this.hasSearch = true;
@@ -513,13 +529,13 @@ export default {
       this.selectedAssessmentMax = undefined;
       this.updateSearchStatus()
     },
+    changePage() {
+      $([document.documentElement, document.body]).animate({
+          scrollTop: $("#list-assessors").offset().top
+      }, 1000);
+    },
     setValue(field, val) {
       if(field === 'assessmentText'){ this.assessmentSlice = val }
-    }
-  },
-  updated() {
-    if (this.isLoadingSearch && this.hasSearch) {
-      this.isLoadingSearch = false;
     }
   },
   mounted() {
@@ -564,9 +580,6 @@ export default {
 </script>
 
 <style lang="scss">
-.list-problems {
-  position: relative;
-}
 .flex-container {
   display: flex;
 }

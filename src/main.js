@@ -11,6 +11,10 @@ import "./plugins/buefy"
 Vue.config.productionTip = false
 Vue.use(Buefy);
 
+global.jQuery = require('jquery');
+var $ = global.jQuery;
+window.$ = $;
+
 new Vue({
   router,
   store,
