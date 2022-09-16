@@ -55,7 +55,7 @@
 
           <!-- Challenge Selection -->
           <b-field label="Select from Challenges you have assessed">
-            <b-taginput
+            <b-taginput class="column is-11"
               ref="challengeTagSelection"
               v-model="selectedChallenges"
               :data="dropdownChallenges"
@@ -77,10 +77,11 @@
                   There are no items
               </template>
             </b-taginput>
+            <b-button class="clear-btn" @click="clearChallengeFilter()" type="is-ghost" size="is-small">Clear filter</b-button>
           </b-field>
           <!-- Proposal Selection -->
           <b-field label="Select from Proposals you have assessed">
-            <b-taginput
+            <b-taginput class="column is-11"
               ref="proposalTagSelection"
               v-model="selectedProposals"
               :data="dropdownProposals"
@@ -102,6 +103,7 @@
                   There are no items
               </template>
             </b-taginput>
+            <b-button class="clear-btn" @click="clearProposalFilter()" type="is-ghost" size="is-small">Clear filter</b-button>
           </b-field>
           <!-- Number of Proposals Assessed Selection -->
           <div class="flex-container"> 
@@ -529,6 +531,14 @@ export default {
         return this.selectedProposals.indexOf(option) === -1
       })
     },
+    clearChallengeFilter() {
+      this.selectedChallenges = [];
+      this.updateSearchStatus()
+    },
+    clearProposalFilter() {
+      this.selectedProposals = [];
+      this.updateSearchStatus()
+    },
     clearNumberFilter() {
       this.selectedAssessmentMin = null;
       this.selectedAssessmentMax = null;
@@ -617,11 +627,8 @@ export default {
     }
   }
 }
-.is-vertical-centered {
-  span {
-    vertical-align: middle;
-    display: inline-block;
-  }
+.clear-btn {
+  padding-top: 2.5em !important;
 }
 ul {
   margin-top: 0.1em !important;
